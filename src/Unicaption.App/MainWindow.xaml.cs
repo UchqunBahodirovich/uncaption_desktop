@@ -1,6 +1,7 @@
-using Microsoft.UI;
+using Microsoft.UI.Input;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
+using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media.Animation;
 using Unicaption.App.Platform;
 using Unicaption.App.Views;
@@ -13,6 +14,9 @@ public sealed partial class MainWindow : Window
 {
     private const int ReferenceWidth = 1280, ReferenceHeight = 720;
     private const int MinWidth = 1024, MinHeight = 700;
+
+    /// <summary>Height of the drag strip at the top of every page (DIP).</summary>
+    public const double TitleBarHeight = 48;
 
     private readonly WindowHooks _hooks;
     private bool _closingHandled;
@@ -29,6 +33,7 @@ public sealed partial class MainWindow : Window
         var icon = Path.Combine(AppContext.BaseDirectory, "Assets", "app_icon.ico");
         if (File.Exists(icon)) AppWindow.SetIcon(icon);
         AppWindow.Closing += OnClosing;
+        SetupTitleBar();
 
         ApplyTheme();
         services.Auth.SignedOut += (_, _) => DispatcherQueue.TryEnqueue(ShowLogin);
@@ -39,21 +44,84 @@ public sealed partial class MainWindow : Window
 
     public void ApplyTheme()
     {
-        var dark = AppServices.Current.Settings.DarkMode;
-        Root.RequestedTheme = dark ? ElementTheme.Dark : ElementTheme.Light;
-        if (AppWindowTitleBar.IsCustomizationSupported())
-        {
-            var tb = AppWindow.TitleBar;
-            var bg = dark ? ColorHelper.FromArgb(255, 0x0D, 0x11, 0x17) : ColorHelper.FromArgb(255, 0xF7, 0xF8, 0xFA);
-            var fg = dark ? ColorHelper.FromArgb(255, 0xF0, 0xF4, 0xF8) : ColorHelper.FromArgb(255, 0x1C, 0x24, 0x30);
-            tb.BackgroundColor = bg;
-            tb.InactiveBackgroundColor = bg;
-            tb.ButtonBackgroundColor = bg;
-            tb.ButtonInactiveBackgroundColor = bg;
-            tb.ForegroundColor = fg;
-            tb.ButtonForegroundColor = fg;
-        }
+        Root.RequestedTheme = AppServices.Current.Settings.DarkMode ? ElementTheme.Dark : ElementTheme.Light;
     }
+
+    // ═══ Custom title bar ════════════════════════════════════════════════════
+
+    private FrameworkElement? _titleBarInteractive;
+
+    /// <summary>
+    /// Removes the system caption (title text + min/max/close) but keeps the resize border.
+    /// Dragging, double-click to maximize and the system menu stay native through a Caption
+    /// region over the top strip; the custom buttons are left out of it so they get clicks.
+    /// </summary>
+    private void SetupTitleBar()
+    {
+        if (AppWindow.Presenter is OverlappedPresenter presenter) presenter.SetBorderAndTitleBar(true, false);
+        AppWindow.Changed += (_, args) =>
+        {
+            if (args.DidPresenterChange || args.DidSizeChange) UpdateMaximizeGlyph();
+        };
+        Activated += (_, args) =>
+            CaptionButtons.Opacity = args.WindowActivationState == WindowActivationState.Deactivated ? 0.5 : 1;
+        Root.SizeChanged += (_, _) => UpdateDragRegion();
+        Root.Loaded += (_, _) => UpdateDragRegion();
+        RootFrame.Navigated += (_, _) => SetTitleBarInteractive((RootFrame.Content as PlaygroundPage)?.TitleBarInteractive);
+    }
+
+    /// <summary>A page control living inside the top strip (e.g. the sidebar toggle) that must stay clickable.</summary>
+    public void SetTitleBarInteractive(FrameworkElement? element)
+    {
+        if (_titleBarInteractive is not null) _titleBarInteractive.SizeChanged -= OnInteractiveSizeChanged;
+        _titleBarInteractive = element;
+        if (element is not null) element.SizeChanged += OnInteractiveSizeChanged;
+        UpdateDragRegion();
+    }
+
+    private void OnInteractiveSizeChanged(object sender, SizeChangedEventArgs e) => UpdateDragRegion();
+
+    private void UpdateDragRegion()
+    {
+        if (Root.XamlRoot is null || Root.ActualWidth <= 0) return;
+        var scale = Root.XamlRoot.RasterizationScale;
+
+        double left = 0;
+        if (_titleBarInteractive is { ActualWidth: > 0 } element)
+        {
+            var bounds = element.TransformToVisual(Root).TransformBounds(new Windows.Foundation.Rect(0, 0, element.ActualWidth, element.ActualHeight));
+            if (bounds.Top < TitleBarHeight) left = bounds.Right + 4;
+        }
+        var right = CaptionButtons.ActualWidth > 0
+            ? CaptionButtons.TransformToVisual(Root).TransformPoint(new Windows.Foundation.Point(0, 0)).X - 4
+            : Root.ActualWidth;
+
+        var caption = new RectInt32((int)(left * scale), 0, (int)(Math.Max(0, right - left) * scale), (int)(TitleBarHeight * scale));
+        InputNonClientPointerSource.GetForWindowId(AppWindow.Id).SetRegionRects(NonClientRegionKind.Caption, [caption]);
+    }
+
+    private void UpdateMaximizeGlyph()
+    {
+        var maximized = AppWindow.Presenter is OverlappedPresenter { State: OverlappedPresenterState.Maximized };
+        MaximizeButton.Content = maximized ? "" : "";
+        var label = maximized ? "Restore" : "Maximize";
+        ToolTipService.SetToolTip(MaximizeButton, label);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(MaximizeButton, label);
+    }
+
+    private void OnMinimize(object sender, RoutedEventArgs e)
+    {
+        if (AppWindow.Presenter is OverlappedPresenter p) p.Minimize();
+    }
+
+    private void OnMaximize(object sender, RoutedEventArgs e)
+    {
+        if (AppWindow.Presenter is not OverlappedPresenter p) return;
+        if (p.State == OverlappedPresenterState.Maximized) p.Restore();
+        else p.Maximize();
+    }
+
+    private void OnCloseClick(object sender, RoutedEventArgs e) => _ = CloseAfterShutdownAsync();
 
     public void ShowLogin()
     {
@@ -68,17 +136,6 @@ public sealed partial class MainWindow : Window
         _ = AppServices.Current.Account.RefreshAsync();
     }
 
-    /// <summary>Usage/Billing are pushed on top; the live session keeps running (NAV 02).</summary>
-    public void ShowUsage() => RootFrame.Navigate(typeof(UsagePage), null, new DrillInNavigationTransitionInfo());
-
-    public void ShowBilling() => RootFrame.Navigate(typeof(BillingPage), null, new DrillInNavigationTransitionInfo());
-
-    public void GoBack()
-    {
-        if (RootFrame.CanGoBack) RootFrame.GoBack();
-        else ShowPlayground();
-    }
-
     public async Task SignOutAsync()
     {
         var s = AppServices.Current;
@@ -89,13 +146,19 @@ public sealed partial class MainWindow : Window
         ShowLogin();
     }
 
-    /// <summary>Closing while live: stop capture and submit usage before exiting.</summary>
-    private async void OnClosing(AppWindow sender, AppWindowClosingEventArgs args)
+    /// <summary>Closing while live (Alt+F4, taskbar): stop capture and submit usage before exiting.</summary>
+    private void OnClosing(AppWindow sender, AppWindowClosingEventArgs args)
     {
-        var session = AppServices.Current.Session;
-        if (_closingHandled || !session.IsBusy) return;
+        if (_closingHandled || !AppServices.Current.Session.IsBusy) return;
         args.Cancel = true;
+        _ = CloseAfterShutdownAsync();
+    }
+
+    private async Task CloseAfterShutdownAsync()
+    {
+        if (_closingHandled) return;
         _closingHandled = true;
+        var session = AppServices.Current.Session;
         try
         {
             await session.ShutdownAsync().WaitAsync(TimeSpan.FromSeconds(5));

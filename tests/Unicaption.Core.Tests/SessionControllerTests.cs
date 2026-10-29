@@ -17,6 +17,7 @@ public class SessionControllerTests
         public readonly FakeClock Clock = new();
         public readonly List<FakeWs> Sockets = [];
         public bool Authenticate = true;
+        public string? AuthReply;
         public readonly SessionController Controller;
         public static readonly SessionOptions Options = new(AudioSourceKind.Mic, new RealtimeConfig("stt-rt-v3", "en", "ru"));
 
@@ -25,6 +26,7 @@ public class SessionControllerTests
             Controller = new SessionController(Audio, () =>
             {
                 var ws = new FakeWs { Authenticate = Authenticate };
+                if (AuthReply is not null) ws.AuthReply = AuthReply;
                 lock (Sockets) Sockets.Add(ws);
                 return ws;
             }, Tokens, Usage, new Uri("wss://example.test/ws"), new TranscriptStore(Clock), Clock,
@@ -78,6 +80,28 @@ public class SessionControllerTests
         rig.Authenticate = true;
         await rig.Controller.StartAsync(Rig.Options);
         Assert.Equal(SessionState.Live, rig.Controller.State);
+    }
+
+    [Theory] // backend replies with "status"; the documented RT 01 shape uses "type"
+    [InlineData("{\"status\": \"authenticated\", \"plan\": \"ultra\"}")]
+    [InlineData("{\"type\":\"authenticated\"}")]
+    public async Task AuthenticatedReply_BothShapes_GoLive(string reply)
+    {
+        var rig = new Rig { AuthReply = reply };
+        await rig.Controller.StartAsync(Rig.Options);
+        Assert.Equal(SessionState.Live, rig.Controller.State);
+    }
+
+    [Fact] // rejection is {"error": "..."} without "type": fail at once, not after the auth timeout
+    public async Task AuthRejected_ErrorShape_FailsFast()
+    {
+        var rig = new Rig { AuthReply = "{\"error\": \"Authentication failed\"}" };
+        rig.Controller.AuthTimeout = TimeSpan.FromSeconds(30);
+        var started = DateTime.UtcNow;
+        await rig.Controller.StartAsync(Rig.Options);
+        Assert.Equal(SessionState.Error, rig.Controller.State);
+        Assert.Equal(SessionErrorKind.AuthExpired, rig.Controller.LastError!.Kind);
+        Assert.True(DateTime.UtcNow - started < TimeSpan.FromSeconds(5));
     }
 
     [Fact] // AC 13 + TIME 01

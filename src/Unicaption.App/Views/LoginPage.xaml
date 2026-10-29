@@ -6,11 +6,11 @@
 
     <Grid>
         <Grid.RowDefinitions>
-            <RowDefinition Height="56" />
+            <RowDefinition Height="48" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- Top bar 56, logo 24 -->
+        <!-- Top bar 48 (window drag strip; caption buttons from MainWindow on the right), logo 24 -->
         <Border Background="{ThemeResource UcSurfaceCard}" BorderBrush="{ThemeResource UcBorderSubtle}"
                 BorderThickness="0,0,0,1" Padding="24,0">
             <Image Source="ms-appx:///Assets/icon128.png" Width="24" Height="24"
@@ -18,7 +18,7 @@
         </Border>
 
         <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
-            <Border Style="{StaticResource UcPanel}" MaxWidth="400" Margin="16,32"
+            <Border x:Name="Card" Style="{StaticResource UcPanel}" MaxWidth="400" Margin="16,32"
                     HorizontalAlignment="Center" VerticalAlignment="Center" Padding="36,40,36,34">
                 <StackPanel>
                     <Image Source="ms-appx:///Assets/icon128.png" Width="56" Height="56" AutomationProperties.AccessibilityView="Raw" />

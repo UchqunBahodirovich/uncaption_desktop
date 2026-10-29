@@ -35,5 +35,17 @@
         </Grid>
 
         <Frame x:Name="RootFrame" />
+
+        <!-- Custom title bar: the system caption is removed (MainWindow.SetupTitleBar). The top
+             48 px of every page is the drag region; these buttons sit at its right edge. -->
+        <StackPanel x:Name="CaptionButtons" Orientation="Horizontal" Spacing="2" Margin="0,8,10,0"
+                    HorizontalAlignment="Right" VerticalAlignment="Top">
+            <Button Style="{StaticResource UcCaptionButton}" Content="&#xE921;" Click="OnMinimize"
+                    ToolTipService.ToolTip="Minimize" AutomationProperties.Name="Minimize" />
+            <Button x:Name="MaximizeButton" Style="{StaticResource UcCaptionButton}" Content="&#xE922;" Click="OnMaximize"
+                    ToolTipService.ToolTip="Maximize" AutomationProperties.Name="Maximize" />
+            <Button Style="{StaticResource UcCloseCaptionButton}" Content="&#xE8BB;" Click="OnCloseClick"
+                    ToolTipService.ToolTip="Close" AutomationProperties.Name="Close" />
+        </StackPanel>
     </Grid>
 </Window>

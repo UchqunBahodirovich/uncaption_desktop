@@ -24,7 +24,6 @@ public sealed class AccountService
     public AccountLoadState State { get; private set; } = AccountLoadState.NotLoaded;
     public UserPlan? Plan { get; private set; }
     public OnDemandUsage? OnDemand { get; private set; }
-    public UserStats? Stats { get; private set; }
     public string? ErrorMessage { get; private set; }
     public DateTimeOffset? LoadedAt { get; private set; }
 
@@ -35,7 +34,6 @@ public sealed class AccountService
         _generation++;
         Plan = null;
         OnDemand = null;
-        Stats = null;
         ErrorMessage = null;
         LoadedAt = null;
         State = AccountLoadState.NotLoaded;
@@ -51,14 +49,12 @@ public sealed class AccountService
 
         var plan = Capture(_api.GetPlanAsync(ct));
         var onDemand = Capture(_api.GetOnDemandAsync(ct));
-        var stats = Capture(_api.GetStatsAsync(ct));
-        await Task.WhenAll(plan, onDemand, stats).ConfigureAwait(true);
+        await Task.WhenAll(plan, onDemand).ConfigureAwait(true);
         if (gen != _generation) return; // signed out or superseded meanwhile
 
         Exception? firstError = null;
         if (plan.Result.Error is null) Plan = plan.Result.Value; else firstError ??= plan.Result.Error;
         if (onDemand.Result.Error is null) OnDemand = onDemand.Result.Value; else firstError ??= onDemand.Result.Error;
-        if (stats.Result.Error is null) Stats = stats.Result.Value; else firstError ??= stats.Result.Error;
 
         if (firstError is null)
         {

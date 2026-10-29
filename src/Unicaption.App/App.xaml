@@ -26,6 +26,17 @@
                     <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#FFFFFF" />
                     <SolidColorBrush x:Key="TextControlBorderBrush" Color="#E5E8EC" />
                     <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#FF3D00" />
+
+                    <!-- One modal surface: dialogs, popovers and tour steps share card / border / scrim. -->
+                    <SolidColorBrush x:Key="ContentDialogTopOverlay" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="ContentDialogBackground" Color="#F7F8FA" />
+                    <SolidColorBrush x:Key="ContentDialogBorderBrush" Color="#14000000" />
+                    <SolidColorBrush x:Key="ContentDialogSeparatorBorderBrush" Color="#E5E8EC" />
+                    <SolidColorBrush x:Key="ContentDialogSmokeFill" Color="#4D0B0F17" />
+                    <SolidColorBrush x:Key="FlyoutPresenterBackground" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="FlyoutBorderThemeBrush" Color="#E5E8EC" />
+                    <SolidColorBrush x:Key="TeachingTipBackgroundBrush" Color="#FFFFFF" />
+                    <SolidColorBrush x:Key="TeachingTipBorderBrush" Color="#E5E8EC" />
                 </ResourceDictionary>
                 <ResourceDictionary x:Key="Dark">
                     <Color x:Key="SystemAccentColor">#FF3D00</Color>
@@ -40,12 +51,41 @@
                     <SolidColorBrush x:Key="TextControlBackgroundFocused" Color="#111827" />
                     <SolidColorBrush x:Key="TextControlBorderBrush" Color="#1E2733" />
                     <SolidColorBrush x:Key="TextControlBorderBrushFocused" Color="#FF3D00" />
+
+                    <SolidColorBrush x:Key="ContentDialogTopOverlay" Color="#111827" />
+                    <SolidColorBrush x:Key="ContentDialogBackground" Color="#0D1117" />
+                    <SolidColorBrush x:Key="ContentDialogBorderBrush" Color="#14FFFFFF" />
+                    <SolidColorBrush x:Key="ContentDialogSeparatorBorderBrush" Color="#1E2733" />
+                    <SolidColorBrush x:Key="ContentDialogSmokeFill" Color="#990A0E1A" />
+                    <SolidColorBrush x:Key="FlyoutPresenterBackground" Color="#111827" />
+                    <SolidColorBrush x:Key="FlyoutBorderThemeBrush" Color="#1E2733" />
+                    <SolidColorBrush x:Key="TeachingTipBackgroundBrush" Color="#111827" />
+                    <SolidColorBrush x:Key="TeachingTipBorderBrush" Color="#1E2733" />
                 </ResourceDictionary>
             </ResourceDictionary.ThemeDictionaries>
 
             <x:Double x:Key="ContentDialogMaxWidth">640</x:Double>
             <x:Double x:Key="ContentDialogMaxHeight">760</x:Double>
             <CornerRadius x:Key="OverlayCornerRadius">18</CornerRadius>
+
+            <!--
+              Every modal uses this style (Ui.Dialog for code-built dialogs, Style= in XAML dialogs):
+              DialogHeader as Title, brand primary, neutral Cancel/Close, danger for destructive.
+              DefaultButton stays None: the stock "default" state swaps in AccentButtonStyle and
+              would break the shared button look; Enter still activates the focused button.
+            -->
+            <Style x:Key="UcDialogStyle" TargetType="ContentDialog" BasedOn="{StaticResource DefaultContentDialogStyle}">
+                <Setter Property="CornerRadius" Value="18" />
+                <Setter Property="FontFamily" Value="{StaticResource UcFont}" />
+                <Setter Property="DefaultButton" Value="None" />
+                <Setter Property="PrimaryButtonStyle" Value="{StaticResource UcPrimaryButton}" />
+                <Setter Property="SecondaryButtonStyle" Value="{StaticResource UcSecondaryButton}" />
+                <Setter Property="CloseButtonStyle" Value="{StaticResource UcSecondaryButton}" />
+            </Style>
+
+            <Style x:Key="UcDangerDialogStyle" TargetType="ContentDialog" BasedOn="{StaticResource UcDialogStyle}">
+                <Setter Property="PrimaryButtonStyle" Value="{StaticResource UcDangerButton}" />
+            </Style>
         </ResourceDictionary>
     </Application.Resources>
 </Application>

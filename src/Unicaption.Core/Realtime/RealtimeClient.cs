@@ -1,6 +1,7 @@
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json.Nodes;
+using Unicaption.Core.Api;
 using Unicaption.Core.Audio;
 using Unicaption.Core.Diagnostics;
 
@@ -228,7 +229,12 @@ public sealed class RealtimeClient : IAsyncDisposable
             _diag.Warn("ws.malformed_message", ("length", raw.Length.ToString()));
             return;
         }
-        switch (RealtimeConfig.TypeOf(msg))
+        // The deployed backend answers auth with {"status":"authenticated","plan":…} and rejects with
+        // {"error":"…"} (no "type"); "type" is still accepted for the documented RT 01 shape.
+        var kind = RealtimeConfig.TypeOf(msg)
+                   ?? JsonNormalizer.OptionalString(msg, "status")
+                   ?? (msg.ContainsKey("error") ? "error" : null);
+        switch (kind)
         {
             case "authenticated":
                 _authenticated.TrySetResult();

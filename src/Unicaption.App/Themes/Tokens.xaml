@@ -27,6 +27,8 @@
             <SolidColorBrush x:Key="UcSuccess" Color="#16A34A" />
             <SolidColorBrush x:Key="UcSuccessSurface" Color="#1A16A34A" />
             <SolidColorBrush x:Key="UcError" Color="#DC2626" />
+            <SolidColorBrush x:Key="UcErrorSurface" Color="#14DC2626" />
+            <SolidColorBrush x:Key="UcErrorBorder" Color="#4DDC2626" />
             <SolidColorBrush x:Key="UcOnBrand" Color="#FFFFFF" />
             <Color x:Key="UcBgStop0">#F2F4F8</Color>
             <Color x:Key="UcBgStop1">#F7F8FA</Color>
@@ -56,6 +58,8 @@
             <SolidColorBrush x:Key="UcSuccess" Color="#22C55E" />
             <SolidColorBrush x:Key="UcSuccessSurface" Color="#1F22C55E" />
             <SolidColorBrush x:Key="UcError" Color="#DC2626" />
+            <SolidColorBrush x:Key="UcErrorSurface" Color="#1FDC2626" />
+            <SolidColorBrush x:Key="UcErrorBorder" Color="#4DDC2626" />
             <SolidColorBrush x:Key="UcOnBrand" Color="#FFFFFF" />
             <Color x:Key="UcBgStop0">#0A0E1A</Color>
             <Color x:Key="UcBgStop1">#0D1117</Color>
@@ -83,6 +87,8 @@
             <SolidColorBrush x:Key="UcSuccess" Color="{ThemeResource SystemColorWindowTextColor}" />
             <SolidColorBrush x:Key="UcSuccessSurface" Color="{ThemeResource SystemColorWindowColor}" />
             <SolidColorBrush x:Key="UcError" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="UcErrorSurface" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="UcErrorBorder" Color="{ThemeResource SystemColorWindowTextColor}" />
             <SolidColorBrush x:Key="UcOnBrand" Color="{ThemeResource SystemColorHighlightTextColor}" />
             <Color x:Key="UcBgStop0">Black</Color>
             <Color x:Key="UcBgStop1">Black</Color>

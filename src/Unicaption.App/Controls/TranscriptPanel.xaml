@@ -26,7 +26,7 @@
                     <TextBlock x:Name="TitleText" Grid.Column="1" Style="{StaticResource UcPanelTitle}" />
 
                     <!-- LIVE badge: pill, padding 10/5, dot 8, 12/800 -->
-                    <Border x:Name="LiveBadge" Grid.Column="3" Visibility="Collapsed" CornerRadius="999" Padding="10,5"
+                    <Border x:Name="LiveBadge" Grid.Column="3" Visibility="Collapsed" CornerRadius="6" Padding="10,5"
                             Background="{ThemeResource UcSuccessSurface}" VerticalAlignment="Center"
                             AutomationProperties.Name="Live">
                         <StackPanel Orientation="Horizontal" Spacing="6">
@@ -69,7 +69,7 @@
 
                 <!-- TEXT 04: when the reader scrolled up, follow mode pauses; this returns to new text. -->
                 <Button x:Name="JumpButton" Visibility="Collapsed" Style="{StaticResource UcPrimaryButton}"
-                        CornerRadius="999" MinHeight="32" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                        CornerRadius="10" MinHeight="32" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                         Margin="0,0,0,12" Click="OnJumpClick" AutomationProperties.Name="Jump to latest">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <FontIcon Glyph="&#xE74B;" FontFamily="{StaticResource UcIcons}" FontSize="12" />

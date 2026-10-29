@@ -3,18 +3,20 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:controls="using:Unicaption.App.Controls"
+    Style="{StaticResource UcDialogStyle}"
     PrimaryButtonText="Save"
-    CloseButtonText="Cancel"
-    DefaultButton="Primary"
-    CornerRadius="18">
+    CloseButtonText="Cancel">
 
-    <!-- Context dialog: width 520, padding 24, inner scroll -->
-    <ScrollViewer Width="472" MaxHeight="560" VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="10" Padding="0,0,8,0">
-            <TextBlock Text="Context" Style="{StaticResource UcText}" FontSize="22" FontWeight="ExtraBold" />
-            <TextBlock Text="Context helps captioning recognise domain-specific terms." Style="{StaticResource UcSecondaryText}" />
+    <ContentDialog.Title>
+        <controls:DialogHeader Glyph="&#xE8A5;" Heading="Context"
+                               Subtitle="Helps captioning recognise domain-specific terms." />
+    </ContentDialog.Title>
 
-            <Grid Margin="0,14,0,0">
+    <!-- Context dialog: inner scroll. WinUI scrollbars overlay content, so the content keeps a
+         20 px gutter on the right where the bar lives. -->
+    <ScrollViewer Width="492" MaxHeight="520" VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="10" Padding="0,0,20,0">
+            <Grid Margin="0,4,0,0">
                 <StackPanel Orientation="Horizontal" Spacing="10">
                     <TextBlock Text="Custom Context" Style="{StaticResource UcText}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" />
                     <Border Style="{StaticResource UcBadge}">
@@ -24,7 +26,7 @@
                 <TextBlock x:Name="CountText" HorizontalAlignment="Right" VerticalAlignment="Center"
                            Style="{StaticResource UcMutedText}" FontSize="13" />
             </Grid>
-            <TextBox x:Name="ContextBox" Style="{StaticResource UcTextBox}" MaxLength="300" Height="104"
+            <TextBox x:Name="ContextBox" Style="{StaticResource UcMultilineTextBox}" MaxLength="300" Height="104"
                      AcceptsReturn="True" TextWrapping="Wrap" TextChanged="OnContextChanged"
                      PlaceholderText="Prilosec, Celebrex, Xanax, cardiology, stents..."
                      AutomationProperties.Name="Custom context" />
@@ -35,7 +37,7 @@
             <Border Height="1" Background="{ThemeResource UcBorderSubtle}" Margin="0,14" />
 
             <TextBlock Text="Default Translation Prompt" Style="{StaticResource UcText}" FontSize="15" FontWeight="Bold" />
-            <TextBox x:Name="PromptBox" Style="{StaticResource UcTextBox}" Height="104" AcceptsReturn="True"
+            <TextBox x:Name="PromptBox" Style="{StaticResource UcMultilineTextBox}" Height="104" AcceptsReturn="True"
                      TextWrapping="Wrap" AutomationProperties.Name="Default translation prompt" />
             <TextBlock Text="Prepended to translation instructions. Leave empty for default." Style="{StaticResource UcSecondaryText}" FontSize="12" />
 

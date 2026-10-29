@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Unicaption.App.Controls;
 using Unicaption.Core.Api;
 using Unicaption.Core.Auth;
 
@@ -13,6 +14,7 @@ public sealed partial class LoginPage : Page
     public LoginPage()
     {
         InitializeComponent();
+        Motion.AttachShowHide(Card, 0, 12); // seen once per sign-in, so it may arrive gently
         var cfg = AppServices.Current.Config;
         // UI 06: links without a configured URL are not shown as active links.
         TermsLink.Visibility = string.IsNullOrEmpty(cfg.TermsUrl) ? Visibility.Collapsed : Visibility.Visible;

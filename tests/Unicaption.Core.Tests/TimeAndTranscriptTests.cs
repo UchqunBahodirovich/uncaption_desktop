@@ -81,6 +81,16 @@ public class TokenParserTests
         Assert.Equal("stt-rt-v3", (string?)json["model"]);
         Assert.Equal("two_way", (string?)json["translation"]!["type"]);
         Assert.Equal("ru", (string?)json["translation"]!["language_b"]);
+        Assert.Null(json["language_hints"]); // unchanged contract when no hints are chosen
+    }
+
+    [Fact]
+    public void Config_SendsPrimaryFirstThenHints()
+    {
+        var json = JsonNode.Parse(new RealtimeConfig("stt-rt-v3", "en", "ru", ["uz", "en", "uz", "ru"]).ToJson())!.AsObject();
+        var hints = json["language_hints"]!.AsArray().Select(n => (string)n!).ToArray();
+        Assert.Equal(["en", "uz", "ru"], hints);
+        Assert.Equal("en", (string?)json["language"]);
     }
 }
 

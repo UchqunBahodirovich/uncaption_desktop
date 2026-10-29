@@ -35,7 +35,7 @@
 
             <TextBox x:Name="Editor" Grid.Row="1" AcceptsReturn="True" TextWrapping="Wrap"
                      PlaceholderText="Type your notes here..." BorderThickness="0" CornerRadius="0"
-                     Background="Transparent" Padding="16" FontSize="14"
+                     Background="Transparent" Padding="16,16,24,16" FontSize="14"
                      ScrollViewer.VerticalScrollBarVisibility="Auto" TextChanged="OnTextChanged"
                      AutomationProperties.Name="Notes" />
 

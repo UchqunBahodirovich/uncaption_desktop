@@ -43,6 +43,7 @@ public sealed partial class TranscriptPanel : UserControl
     {
         InitializeComponent();
         ActualThemeChanged += (_, _) => RebuildAll();
+        Motion.AttachShowHide(JumpButton, 0, 8); // rises from the bottom edge it is pinned to
     }
 
     public event EventHandler? LanguageClicked;
@@ -61,12 +62,13 @@ public sealed partial class TranscriptPanel : UserControl
         AutomationProperties.SetName(this, title);
     }
 
-    public void SetLanguage(string code, bool enabled)
+    /// <param name="hintCount">Extra hint languages; shown as "EN +2" on the pill.</param>
+    public void SetLanguage(string code, bool enabled, int hintCount = 0)
     {
         _language = code;
         foreach (var pill in new[] { LeadLanguagePill, TrailLanguagePill })
         {
-            pill.Content = code.ToUpperInvariant();
+            pill.Content = hintCount > 0 ? $"{code.ToUpperInvariant()} +{hintCount}" : code.ToUpperInvariant();
             pill.IsEnabled = enabled; // NAV 02: languages are locked while a session is active
             AutomationProperties.SetName(pill, $"{TitleText.Text} language: {Core.Catalog.Catalogs.LanguageName(code)}");
             ToolTipService.SetToolTip(pill, enabled ? "Change language" : "Stop the session to change language");

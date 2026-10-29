@@ -1,0 +1,31 @@
+<UserControl
+    x:Class="Unicaption.App.Controls.DialogHeader"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- Shared modal header: icon tile 40 (radius 12) + title 20/700 + subtitle 13. Every dialog
+         and tour step uses this, so modals read as one family. -->
+    <Grid ColumnSpacing="14">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="Auto" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+
+        <Grid>
+            <Border x:Name="BrandTile" Style="{StaticResource UcIconTile}">
+                <FontIcon x:Name="BrandGlyph" FontFamily="{StaticResource UcIcons}" FontSize="18"
+                          Foreground="{ThemeResource UcBrand}" />
+            </Border>
+            <Border x:Name="DangerTile" Style="{StaticResource UcIconTile}" Visibility="Collapsed"
+                    Background="{ThemeResource UcErrorSurface}" BorderBrush="{ThemeResource UcErrorBorder}">
+                <FontIcon x:Name="DangerGlyph" FontFamily="{StaticResource UcIcons}" FontSize="18"
+                          Foreground="{ThemeResource UcError}" />
+            </Border>
+        </Grid>
+
+        <StackPanel Grid.Column="1" Spacing="4" VerticalAlignment="Center">
+            <TextBlock x:Name="HeadingText" Style="{StaticResource UcDialogTitle}" />
+            <TextBlock x:Name="SubtitleText" Style="{StaticResource UcSecondaryText}" Visibility="Collapsed" />
+        </StackPanel>
+    </Grid>
+</UserControl>

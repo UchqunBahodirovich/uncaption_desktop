@@ -25,6 +25,24 @@ public class NormalizerTests
         Assert.NotNull(p.ExpiresAt);
     }
 
+    [Fact] // shapes returned by the deployed backend (views.get_user_plan / get_ondemand_stats / translate_text)
+    public void Plan_And_OnDemand_DeployedBackendShape()
+    {
+        var p = JsonNormalizer.ParsePlan(J("""{"plan": "ultra", "status": "active", "minutes_used": 72.4, "minutes_limit": 19573.8, "words_translated": 9597, "expiry_date": "2027-01-30T21:51:12.486055+00:00", "has_subscription": false, "cancel_at_period_end": false}"""));
+        Assert.Equal("ultra", p.PlanName);
+        Assert.Equal(72.4, p.UsedMinutes, 3);
+        Assert.Equal(19573.8, p.LimitMinutes!.Value, 3);
+        Assert.NotNull(p.ExpiresAt);
+        Assert.True(p.IsActive);
+        Assert.False(JsonNormalizer.ParsePlan(J("""{"plan": "pro", "status": "past_due"}""")).IsActive);
+
+        var o = JsonNormalizer.ParseOnDemand(J("""{"ondemand_purchased": 1750.9, "ondemand_remaining": 1573.8, "ondemand_used": 179.6, "subscription_limit": 18000.0, "plan": "ultra"}"""));
+        Assert.Equal(1573.8, o.RemainingMinutes!.Value, 3);
+
+        Assert.Equal("привет", JsonNormalizer.ParseTranslation(J("""{"translatedText": "привет", "detectedSourceLang": "en", "context": ""}""")));
+        Assert.Equal("Medical", JsonNormalizer.ParseTerms(J("""{"terms": [{"id": "cigna", "term": "Cigna", "category": "Medical"}]}"""))[0].Description);
+    }
+
     [Fact] // DATA 02: unlimited is not assumed to be 0
     public void Plan_MissingOrUnlimited_IsNull()
     {
@@ -48,9 +66,8 @@ public class NormalizerTests
     }
 
     [Fact]
-    public void Stats_And_Terms()
+    public void Terms()
     {
-        Assert.Equal(new UserStats(4, 12.5, 2), JsonNormalizer.ParseStats(J("""{"sessions":4,"minutes":12.5,"streak":2}""")));
         var terms = JsonNormalizer.ParseTerms(J("""{"results":[{"text":"EMS"},{"term":"CPR","description":"d"},{}]}"""));
         Assert.Equal(2, terms.Count);
         Assert.Equal("d", terms[1].Description);
@@ -88,7 +105,7 @@ public class ApiClientTests
     {
         var handler = new StubHandler(_ => StubHandler.Json("boom", HttpStatusCode.InternalServerError));
         var api = new ApiClient("https://api.test", new FakeTokens(), handler);
-        await Assert.ThrowsAsync<ApiException>(() => api.GetStatsAsync());
+        await Assert.ThrowsAsync<ApiException>(() => api.GetOnDemandAsync());
         Assert.Equal(3, handler.Requests.Count);
 
         handler.Requests.Clear();

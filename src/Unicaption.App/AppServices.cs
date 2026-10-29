@@ -69,7 +69,7 @@ public sealed class AppServices
     private SessionError? CheckEntitlement() =>
         Account.IsOutOfMinutes
             ? new SessionError(SessionErrorKind.LimitReached,
-                "You have used all minutes in your plan. Top up or upgrade in Billing to continue.")
+                "You have used all minutes in your plan.")
             : null;
 
     /// <summary>Optional unicaption.config.json next to the exe overrides public client settings.</summary>
@@ -83,7 +83,13 @@ public sealed class AppServices
             if (File.Exists(path))
             {
                 var cfg = JsonSerializer.Deserialize<AppConfig>(File.ReadAllText(path),
-                    new JsonSerializerOptions { PropertyNameCaseInsensitive = true, ReadCommentHandling = JsonCommentHandling.Skip });
+                    new JsonSerializerOptions
+                    {
+                        PropertyNameCaseInsensitive = true,
+                        ReadCommentHandling = JsonCommentHandling.Skip,
+                        // The example file leaves a trailing comma before the commented-out overrides.
+                        AllowTrailingCommas = true,
+                    });
                 if (cfg is not null) return cfg with { AppVersion = appVersion };
             }
         }

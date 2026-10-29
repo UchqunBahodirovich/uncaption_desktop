@@ -26,7 +26,7 @@ src/
     Diagnostics/  Maxfiy ma’lumotsiz diagnostika
   Unicaption.App/              ← WinUI 3 ilova (Windows)
     Themes/       Light/Dark/HighContrast tokenlar, komponent uslublari
-    Views/        Login, Playground, Usage, Billing
+    Views/        Login, Playground
     Controls/     TranscriptPanel, NotesPanel, DictionaryPanel, ...
     Dialogs/      Language, Context, Support
     Platform/     WasapiAudioEngine, DpapiSecretStore, SystemBrowser, WindowHooks (min o‘lcham, suspend)

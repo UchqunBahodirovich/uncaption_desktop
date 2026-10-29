@@ -5,7 +5,7 @@
     Width="300">
 
     <!-- Dictionary: right overlay, width 300, header 56, left border -->
-    <Border Background="{ThemeResource UcSurfaceCard}" BorderBrush="{ThemeResource UcBorderSubtle}" BorderThickness="1,0,0,0">
+    <Border Background="{ThemeResource UcSurfaceCard}" BorderBrush="{ThemeResource UcBorderSubtle}" BorderThickness="1,1,0,0" CornerRadius="16,0,0,0">
         <Grid>
             <Grid.RowDefinitions>
                 <RowDefinition Height="56" />
@@ -23,7 +23,7 @@
             </Grid>
 
             <StackPanel Grid.Row="1" Padding="14" Spacing="6">
-                <TextBox x:Name="Query" Style="{StaticResource UcTextBox}" CornerRadius="24" PlaceholderText="Search a word..."
+                <TextBox x:Name="Query" Style="{StaticResource UcTextBox}" PlaceholderText="Search a word..."
                          TextChanged="OnQueryChanged" KeyDown="OnQueryKeyDown" AutomationProperties.Name="Search a word" />
                 <TextBlock x:Name="DirectionText" Style="{StaticResource UcMutedText}" />
             </StackPanel>

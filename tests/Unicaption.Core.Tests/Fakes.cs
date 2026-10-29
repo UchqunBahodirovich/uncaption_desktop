@@ -70,6 +70,9 @@ internal sealed class FakeWs : IWsConnection
 {
     private readonly Channel<string?> _incoming = Channel.CreateUnbounded<string?>();
     public bool Authenticate = true;
+
+    /// <summary>What the server sends after "auth". Default is the deployed backend's real reply.</summary>
+    public string AuthReply = "{\"status\": \"authenticated\", \"plan\": \"ultra\"}";
     public readonly List<string> SentText = [];
     public long BinaryBytes;
     public bool Closed;
@@ -79,7 +82,7 @@ internal sealed class FakeWs : IWsConnection
     public Task SendTextAsync(string text, CancellationToken ct)
     {
         lock (SentText) SentText.Add(text);
-        if (Authenticate && text.Contains("\"auth\"")) Push("{\"type\":\"authenticated\"}");
+        if (Authenticate && text.Contains("\"auth\"")) Push(AuthReply);
         return Task.CompletedTask;
     }
 

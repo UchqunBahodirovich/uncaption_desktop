@@ -33,6 +33,7 @@ public sealed partial class PlaygroundPage : Page
     private readonly AppServices _s = AppServices.Current;
     private readonly DispatcherQueueTimer _tick;
     private NotesPanel? _notes;
+    private OnboardingTour? _tour;
     private FlowDirection? _sourceDirectionOverride;
     private bool _sidebarMini;
     private bool _dialogOpen;
@@ -49,6 +50,7 @@ public sealed partial class PlaygroundPage : Page
         SourcePanel.ClearClicked += (_, _) => ClearSource();
         SourcePanel.DirectionToggled += (_, _) => ToggleSourceDirection();
         Dictionary.CloseRequested += (_, _) => SetDictionaryOpen(false);
+        Motion.AttachShowHide(Dictionary, 24, 0); // slides in from, and back out to, the right edge
 
         _tick = DispatcherQueue.CreateTimer();
         _tick.Interval = TimeSpan.FromMilliseconds(250);
@@ -77,6 +79,9 @@ public sealed partial class PlaygroundPage : Page
         RenderTranscripts(true, true);
         ApplySidebarMode(animate: false);
 
+        // Layout must settle first so the tour can anchor to real control bounds.
+        if (!_s.Settings.OnboardingCompleted) DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, StartTour);
+
         if (!_s.UpdatePromptShown)
         {
             _s.UpdatePromptShown = true;
@@ -84,7 +89,7 @@ public sealed partial class PlaygroundPage : Page
         }
     }
 
-    /// <summary>The page is cached; refresh everything that may differ after re-login or Usage/Billing.</summary>
+    /// <summary>The page is cached; refresh everything that may differ after re-login.</summary>
     protected override void OnNavigatedTo(NavigationEventArgs e)
     {
         base.OnNavigatedTo(e);
@@ -95,6 +100,15 @@ public sealed partial class PlaygroundPage : Page
         RenderSession();
         RenderTranscripts(true, true);
     }
+
+    protected override void OnNavigatedFrom(NavigationEventArgs e)
+    {
+        base.OnNavigatedFrom(e);
+        _tour?.Stop();
+    }
+
+    /// <summary>The sidebar toggle sits inside the window drag strip and must stay clickable.</summary>
+    internal FrameworkElement TitleBarInteractive => BrandButton;
 
     // ═══ Rendering ═══════════════════════════════════════════════════════════
 
@@ -125,9 +139,11 @@ public sealed partial class PlaygroundPage : Page
             return;
         }
 
+        // Only what the user needs at a glance: the plan and how many minutes are left.
         PlanBadge.Text = plan.PlanName.ToUpperInvariant();
-        var limit = plan.LimitMinutes is { } l ? $"{l:0}" : "∞";
-        MinutesText.Text = $"{plan.UsedMinutes:0} / {limit} min" + (acc.State == AccountLoadState.Cached ? " · offline" : "");
+        var left = plan.LimitMinutes is { } l ? $"{Math.Max(0, l - plan.UsedMinutes):0} min left" : "Unlimited minutes";
+        MinutesText.Text = left + (acc.State == AccountLoadState.Cached ? " · offline" : "");
+        ToolTipService.SetToolTip(MiniAvatar, $"{plan.PlanName} · {left}");
         MinutesBar.IsIndeterminate = false;
         MinutesBar.Value = plan.MinutesProgress ?? 0;
         MinutesBar.Foreground = Brush(plan.IsMinutesLimitReached ? "UcError" : "UcBrand");
@@ -135,25 +151,30 @@ public sealed partial class PlaygroundPage : Page
 
     private void RenderSettings()
     {
+        // Model / Domain nav items wear the icon of the item picked in their menu.
+        SetNavGlyph(ModelNav, ModelGlyphs[_modelIndex % ModelGlyphs.Length]);
+        SetNavGlyph(DomainNav, DomainGlyphs[_domainIndex % DomainGlyphs.Length]);
+
         var st = _s.Settings;
         var locked = _s.Session.IsBusy;
-        SourcePanel.SetLanguage(st.SourceLanguage, !locked);
+        SourcePanel.SetLanguage(st.SourceLanguage, !locked, st.SourceLanguageHints.Count);
         TranslationPanel.SetLanguage(st.TargetLanguage, !locked);
         SourcePanel.SetScale(st.TextScale);
         TranslationPanel.SetScale(st.TextScale);
         Dictionary.SetLanguages(st.SourceLanguage, st.TargetLanguage);
 
-        ThemeIcon.Glyph = st.DarkMode ? "" : "";
-        ThemeLabel.Text = st.DarkMode ? "Light Theme" : "Dark Theme";
-        AutomationProperties.SetName(ThemeNav, ThemeLabel.Text);
 
         var source = (AudioSourceKind)st.AudioSource;
         SetNavState(MicNav, source == AudioSourceKind.Mic ? NavState.Filled : NavState.Normal);
         SetNavState(SystemNav, source == AudioSourceKind.System ? NavState.Filled : NavState.Normal);
         SetNavState(BothNav, source == AudioSourceKind.Both ? NavState.Filled : NavState.Normal);
+        var activeSource = source switch { AudioSourceKind.System => SystemNav, AudioSourceKind.Both => BothNav, _ => MicNav };
         foreach (var b in new[] { MicNav, SystemNav, BothNav, ModelNav })
         {
-            b.IsEnabled = !locked;
+            // The source being captured stays fully visible while locked; it just ignores input.
+            var keepVisible = locked && b == activeSource;
+            b.IsEnabled = !locked || keepVisible;
+            b.IsHitTestVisible = !locked;
             ToolTipService.SetToolTip(b, locked ? "Stop the session to change this" : (_sidebarMini ? Label(b) : null));
         }
 
@@ -170,6 +191,9 @@ public sealed partial class PlaygroundPage : Page
         StartButton.IsEnabled = !busy;
         StartButton.Background = Brush(state == SessionState.Live ? "UcError" : "UcBrand");
         StartIcon.Glyph = state == SessionState.Live ? "" : "";
+        StartIcon.Visibility = busy ? Visibility.Collapsed : Visibility.Visible;
+        StartSpinner.IsActive = busy;
+        StartSpinner.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
         StartLabel.Text = state switch
         {
             SessionState.Live => "Stop",
@@ -211,7 +235,6 @@ public sealed partial class PlaygroundPage : Page
         ErrorBar.ActionButton = err.Kind switch
         {
             SessionErrorKind.PermissionDenied => ActionButton("Open Windows settings", SystemBrowser.OpenMicrophonePrivacySettings),
-            SessionErrorKind.LimitReached => ActionButton("Open Billing", () => App.MainWindow.ShowBilling()),
             SessionErrorKind.AuthExpired => ActionButton("Sign in", () => _ = App.MainWindow.SignOutAsync()),
             _ => ActionButton("Retry", () => _ = StartAsync()),
         };
@@ -256,7 +279,7 @@ public sealed partial class PlaygroundPage : Page
         ErrorBar.IsOpen = false;
         return _s.Session.StartAsync(new SessionOptions(
             (AudioSourceKind)st.AudioSource,
-            new RealtimeConfig(_s.Config.RealtimeModel, st.SourceLanguage, st.TargetLanguage)));
+            new RealtimeConfig(_s.Config.RealtimeModel, st.SourceLanguage, st.TargetLanguage, st.SourceLanguageHints)));
     }
 
     private void OnErrorClosed(InfoBar sender, object args) => _s.Session.DismissError();
@@ -282,10 +305,19 @@ public sealed partial class PlaygroundPage : Page
     {
         if (_s.Session.IsBusy || _dialogOpen) return;
         var st = _s.Settings;
-        var dialog = new LanguageDialog(source ? st.SourceLanguage : st.TargetLanguage, forTranslation: !source) { XamlRoot = XamlRoot };
-        if (await ShowDialogAsync(dialog) != ContentDialogResult.Primary) return;
-        if (source) st.SourceLanguage = dialog.Selected;
-        else st.TargetLanguage = dialog.Selected;
+        var dialog = source
+            ? new LanguageDialog(st.SourceLanguage, forTranslation: false, st.SourceLanguageHints) { XamlRoot = XamlRoot }
+            : new LanguageDialog(st.TargetLanguage, forTranslation: true) { XamlRoot = XamlRoot };
+        if (await ShowDialogAsync(dialog) != ContentDialogResult.Primary || dialog.Selected.Length == 0) return;
+        if (source)
+        {
+            st.SourceLanguage = dialog.Selected;
+            st.SourceLanguageHints = dialog.Hints.ToList();
+        }
+        else
+        {
+            st.TargetLanguage = dialog.Selected;
+        }
         st.Save();
         if (source) _sourceDirectionOverride = null;
         SourcePanel.SetDirectionOverride(_sourceDirectionOverride);
@@ -308,14 +340,14 @@ public sealed partial class PlaygroundPage : Page
         _sidebarMini = mini;
         var target = mini ? 72.0 : 264.0;
 
-        if (animate && new Windows.UI.ViewManagement.UISettings().AnimationsEnabled)
+        if (animate && Motion.AnimationsEnabled)
         {
             var anim = new DoubleAnimation
             {
                 To = target,
-                Duration = TimeSpan.FromMilliseconds(180),
+                Duration = TimeSpan.FromMilliseconds(200),
                 EnableDependentAnimation = true,
-                EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseOut },
+                EasingFunction = new ExponentialEase { EasingMode = EasingMode.EaseOut, Exponent = 6 },
             };
             Storyboard.SetTarget(anim, Sidebar);
             Storyboard.SetTargetProperty(anim, "Width");
@@ -342,12 +374,16 @@ public sealed partial class PlaygroundPage : Page
 
     private IEnumerable<Button> NavButtons() =>
     [
-        ModelNav, DomainNav, TextSizeNav, ThemeNav, ContextNav, NotesNav, DictionaryNav, MicNav, SystemNav, BothNav,
-        SupportNav, LogoutNav,
+        ModelNav, DomainNav, ContextNav, NotesNav, DictionaryNav, MicNav, SystemNav, BothNav,
     ];
 
     private static string? Label(Button b) =>
         b.Content is StackPanel sp && sp.Children.Count > 1 && sp.Children[1] is TextBlock t ? t.Text : null;
+
+    private static void SetNavGlyph(Button b, string glyph)
+    {
+        if (b.Content is StackPanel { Children.Count: > 0 } sp && sp.Children[0] is FontIcon icon) icon.Glyph = glyph;
+    }
 
     private enum NavState { Normal, Selected, Filled }
 
@@ -378,37 +414,148 @@ public sealed partial class PlaygroundPage : Page
         else AutomationProperties.SetItemStatus(b, "");
     }
 
+    private static readonly string[] ModelGlyphs = ["", "", ""];
+    // WS 02: only the first model / domain is selectable today; the sidebar icons follow these.
+    private readonly int _modelIndex = 0;
+    private readonly int _domainIndex = 0;
+
+    private static readonly string[] DomainGlyphs = ["", "", "", "", "", ""];
+
     private void OnModel(object sender, RoutedEventArgs e)
     {
         // WS 02: Apex names are not mapped to server models yet; only the active model is selectable.
-        var rows = Catalogs.Models.Select((m, i) => PopupRow(m.Name, i == 0 ? m.Subtitle : "Coming soon", TierLabel(m.Tier),
-            selected: i == 0, enabled: false, onClick: null)).ToList();
-        ShowPopup((Button)sender, "CHOOSE MODEL", rows);
+        var cards = Catalogs.Models.Select((m, i) => OptionCard(ModelGlyphs[i % ModelGlyphs.Length], m.Name, m.Subtitle,
+            TierLabel(m.Tier), selected: i == _modelIndex, available: i == _modelIndex));
+        ShowPopup((Button)sender, "Model", "Only Apex Gen-1 is available right now.", OptionList(cards));
     }
 
     private void OnDomain(object sender, RoutedEventArgs e)
     {
         // WS 02: domain is not sent to the backend yet; shown as information, not as an active AI switch.
-        var rows = Catalogs.Domains.Select((d, i) => PopupRow(d.Name, i == 0 ? d.Subtitle : "Coming soon", TierLabel(d.Tier),
-            selected: i == 0, enabled: false, onClick: null)).ToList();
-        ShowPopup((Button)sender, "CHOOSE DOMAIN", rows);
+        var cards = Catalogs.Domains.Select((d, i) => OptionCard(DomainGlyphs[i % DomainGlyphs.Length], d.Name, d.Subtitle,
+            TierLabel(d.Tier), selected: i == _domainIndex, available: i == _domainIndex));
+        ShowPopup((Button)sender, "Domain", "Tunes vocabulary for your field. More domains are on the way.", OptionList(cards));
     }
 
-    private void OnTextSize(object sender, RoutedEventArgs e)
+    // ═══ Account menu ════════════════════════════════════════════════════════
+    // Text size, theme, support and log out live behind the account name instead of the
+    // sidebar list: they are set once and rarely touched, so they should not crowd it.
+
+    private void OnAccountMenu(object sender, RoutedEventArgs e)
     {
         Flyout? flyout = null;
-        var rows = Catalogs.TextSizes.Select(t => PopupRow(t.Label, null, $"{t.Scale * 100:0}%",
-            selected: Math.Abs(_s.Settings.TextScale - t.Scale) < 0.001, enabled: true, onClick: () =>
-            {
-                _s.Settings.TextScale = t.Scale;
-                _s.Settings.Save();
-                RenderSettings();
-                flyout?.Hide();
-            })).ToList();
-        flyout = ShowPopup((Button)sender, "TEXT SIZE", rows, width: 220);
+        void Close() => flyout?.Hide();
+
+        var body = new StackPanel { Spacing = 4 };
+
+        body.Children.Add(MenuLabel("TEXT SIZE"));
+        var sizes = new Grid { ColumnSpacing = 6, Margin = new Thickness(0, 0, 0, 8) };
+        FillSizeTiles(sizes);
+        body.Children.Add(sizes);
+
+        body.Children.Add(MenuLabel("APPEARANCE"));
+        var dark = _s.Settings.DarkMode;
+        body.Children.Add(MenuRow(dark ? "" : "", dark ? "Light theme" : "Dark theme", dark ? "Dark" : "Light", danger: false, () =>
+        {
+            Close();
+            ToggleTheme();
+        }));
+
+        body.Children.Add(new Border { Height = 1, Margin = new Thickness(4, 6, 4, 6), Background = Brush("UcBorderSubtle") });
+        body.Children.Add(MenuRow("", "Help & support", null, danger: false, () =>
+        {
+            Close();
+            _ = ShowSupportAsync();
+        }));
+        body.Children.Add(MenuRow("", "Log out", null, danger: true, () =>
+        {
+            Close();
+            _ = App.MainWindow.SignOutAsync();
+        }));
+
+        var plan = _s.Account.Plan;
+        var planName = plan is null || plan.PlanName.Length == 0 ? null : char.ToUpperInvariant(plan.PlanName[0]) + plan.PlanName[1..];
+        var hint = planName is null ? MinutesText.Text : $"{planName} plan · {MinutesText.Text}";
+        // Opens to the side at the shared 320 width, like the Model / Domain menus.
+        flyout = ShowPopup((Button)sender, NameText.Text, hint, body);
     }
 
-    private void OnToggleTheme(object sender, RoutedEventArgs e)
+    /// <summary>Text size applies at once and the menu stays open, so the change can be judged in place.</summary>
+    private void FillSizeTiles(Grid grid)
+    {
+        grid.Children.Clear();
+        grid.ColumnDefinitions.Clear();
+        var sizes = Catalogs.TextSizes;
+        for (var i = 0; i < sizes.Count; i++)
+        {
+            var (label, scale) = sizes[i];
+            grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            var tile = SizeTile(label, scale, Math.Abs(_s.Settings.TextScale - scale) < 0.001, () =>
+            {
+                _s.Settings.TextScale = scale;
+                _s.Settings.Save();
+                RenderSettings();
+                FillSizeTiles(grid);
+            });
+            Grid.SetColumn(tile, i);
+            grid.Children.Add(tile);
+        }
+    }
+
+    private TextBlock MenuLabel(string text) => new()
+    {
+        Text = text,
+        FontSize = 10,
+        FontWeight = Microsoft.UI.Text.FontWeights.ExtraBold,
+        CharacterSpacing = 73,
+        Foreground = Brush("UcTextMuted"),
+        Margin = new Thickness(4, 4, 4, 2),
+    };
+
+    private Button MenuRow(string glyph, string label, string? trailing, bool danger, Action onClick)
+    {
+        var grid = new Grid { ColumnSpacing = 12 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.Children.Add(new FontIcon
+        {
+            Glyph = glyph,
+            FontSize = 16,
+            FontFamily = (FontFamily)Application.Current.Resources["UcIcons"],
+            Foreground = Brush(danger ? "UcError" : "UcTextSecondary"),
+            VerticalAlignment = VerticalAlignment.Center,
+        });
+        var text = new TextBlock
+        {
+            Text = label,
+            FontSize = 14,
+            FontWeight = Microsoft.UI.Text.FontWeights.Medium,
+            Foreground = Brush(danger ? "UcError" : "UcTextPrimary"),
+            VerticalAlignment = VerticalAlignment.Center,
+        };
+        Grid.SetColumn(text, 1);
+        grid.Children.Add(text);
+        if (trailing is not null)
+        {
+            var t = new TextBlock { Text = trailing, FontSize = 12, Foreground = Brush("UcTextMuted"), VerticalAlignment = VerticalAlignment.Center };
+            Grid.SetColumn(t, 2);
+            grid.Children.Add(t);
+        }
+
+        var button = new Button
+        {
+            Content = grid,
+            Style = (Style)Application.Current.Resources["UcRowButton"],
+            Padding = new Thickness(10, 9, 10, 9),
+            Margin = new Thickness(0),
+        };
+        AutomationProperties.SetName(button, label);
+        button.Click += (_, _) => onClick();
+        return button;
+    }
+
+    private void ToggleTheme()
     {
         _s.Settings.DarkMode = !_s.Settings.DarkMode;
         _s.Settings.Save();
@@ -424,7 +571,7 @@ public sealed partial class PlaygroundPage : Page
     private async void OnContext(object sender, RoutedEventArgs e)
     {
         if (_dialogOpen) return;
-        await ShowDialogAsync(new ContextDialog(_s.Settings, Catalogs.Domains[0].Name) { XamlRoot = XamlRoot });
+        await ShowDialogAsync(new ContextDialog(_s.Settings, Catalogs.Domains[_domainIndex].Name) { XamlRoot = XamlRoot });
     }
 
     private void OnNotes(object sender, RoutedEventArgs e)
@@ -473,17 +620,13 @@ public sealed partial class PlaygroundPage : Page
         RenderSettings();
     }
 
-    private async void OnSupport(object sender, RoutedEventArgs e)
+    private async Task ShowSupportAsync()
     {
         if (_dialogOpen) return;
-        await ShowDialogAsync(new SupportDialog(XamlRoot));
+        var dialog = new SupportDialog(XamlRoot);
+        await ShowDialogAsync(dialog);
+        if (dialog.TourRequested) StartTour();
     }
-
-    private async void OnLogout(object sender, RoutedEventArgs e) => await App.MainWindow.SignOutAsync();
-
-    private void OnUsage(object sender, RoutedEventArgs e) => App.MainWindow.ShowUsage();
-
-    private void OnBilling(object sender, RoutedEventArgs e) => App.MainWindow.ShowBilling();
 
     private void OnAccountRetry(object sender, RoutedEventArgs e) => _ = _s.Account.RefreshAsync();
 
@@ -502,70 +645,236 @@ public sealed partial class PlaygroundPage : Page
     }
 
     // ═══ Popups ══════════════════════════════════════════════════════════════
+    // Option pickers share one layout: title + one-line hint, then cards. The selected card is
+    // tinted with the brand; unavailable options are shown dimmed with a "Soon" tag, never as
+    // controls that look clickable but do nothing.
 
-    private Flyout ShowPopup(Button anchor, string header, IEnumerable<UIElement> rows, double width = 280)
+    private Flyout ShowPopup(Button anchor, string title, string hint, UIElement body, double width = 320,
+        FlyoutPlacementMode placement = FlyoutPlacementMode.RightEdgeAlignedTop)
     {
-        var stack = new StackPanel { Width = width - 32 };
-        stack.Children.Add(new TextBlock
+        var stack = new StackPanel { Width = width - 24, Spacing = 12 };
+        var head = new StackPanel { Spacing = 2, Margin = new Thickness(4, 2, 4, 0) };
+        head.Children.Add(new TextBlock
         {
-            Text = header,
-            Style = (Style)Application.Current.Resources["UcSectionLabel"],
-            Margin = new Thickness(0, 0, 0, 12),
+            Text = title,
+            FontSize = 15,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = Brush("UcTextPrimary"),
         });
-        foreach (var r in rows) stack.Children.Add(r);
+        head.Children.Add(new TextBlock { Text = hint, FontSize = 12, TextWrapping = TextWrapping.Wrap, Foreground = Brush("UcTextMuted") });
+        stack.Children.Add(head);
+        stack.Children.Add(body);
 
-        var presenterStyle = new Style(typeof(FlyoutPresenter));
-        presenterStyle.Setters.Add(new Setter(FlyoutPresenter.CornerRadiusProperty, new CornerRadius(14)));
-        presenterStyle.Setters.Add(new Setter(FlyoutPresenter.PaddingProperty, new Thickness(16)));
+        // Same surface as dialogs (UcFlyoutPresenter); brushes are resolved for the page theme
+        // because flyout popups do not reliably inherit it.
+        var presenterStyle = new Style(typeof(FlyoutPresenter)) { BasedOn = (Style)Application.Current.Resources["UcFlyoutPresenter"] };
         presenterStyle.Setters.Add(new Setter(FlyoutPresenter.BackgroundProperty, Brush("UcSurfaceCard")));
+        presenterStyle.Setters.Add(new Setter(FlyoutPresenter.BorderBrushProperty, Brush("UcBorderSubtle")));
+        presenterStyle.Setters.Add(new Setter(FlyoutPresenter.PaddingProperty, new Thickness(12)));
+        presenterStyle.Setters.Add(new Setter(FrameworkElement.RequestedThemeProperty, ActualTheme));
         var flyout = new Flyout
         {
             Content = stack,
-            Placement = FlyoutPlacementMode.RightEdgeAlignedTop,
+            Placement = placement,
             FlyoutPresenterStyle = presenterStyle,
         };
         flyout.ShowAt(anchor);
         return flyout;
     }
 
-    private UIElement PopupRow(string title, string? subtitle, string? badge, bool selected, bool enabled, Action? onClick)
+    private static StackPanel OptionList(IEnumerable<UIElement> cards)
     {
-        var titleRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
-        titleRow.Children.Add(new TextBlock { Text = title, FontSize = 15, FontWeight = Microsoft.UI.Text.FontWeights.Bold, Foreground = Brush(selected ? "UcBrand" : "UcTextPrimary") });
-        if (badge is not null)
-        {
-            titleRow.Children.Add(new Border
-            {
-                Style = (Style)Application.Current.Resources["UcBadge"],
-                Child = new TextBlock { Text = badge, FontSize = 10, FontWeight = Microsoft.UI.Text.FontWeights.ExtraBold, Foreground = Brush("UcBrand") },
-            });
-        }
-        var text = new StackPanel();
-        text.Children.Add(titleRow);
-        if (subtitle is not null) text.Children.Add(new TextBlock { Text = subtitle, FontSize = 13, Foreground = Brush("UcTextSecondary") });
+        var list = new StackPanel { Spacing = 4 };
+        foreach (var c in cards) list.Children.Add(c);
+        return list;
+    }
 
-        var grid = new Grid { ColumnSpacing = 10 };
-        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(18) });
+    private UIElement OptionCard(string glyph, string title, string subtitle, string? badge, bool selected, bool available)
+    {
+        var tile = new Border
+        {
+            Width = 36,
+            Height = 36,
+            CornerRadius = new CornerRadius(10),
+            VerticalAlignment = VerticalAlignment.Center,
+            Background = Brush(selected ? "UcBrand" : "UcSurfaceRaised"),
+            Child = new FontIcon
+            {
+                Glyph = glyph,
+                FontSize = 16,
+                FontFamily = (FontFamily)Application.Current.Resources["UcIcons"],
+                Foreground = Brush(selected ? "UcOnBrand" : "UcTextSecondary"),
+            },
+        };
+
+        var titleRow = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8 };
+        titleRow.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontSize = 14,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            Foreground = Brush("UcTextPrimary"),
+        });
+        if (badge is not null) titleRow.Children.Add(Pill(badge, "UcBrandSurface", "UcBrand"));
+        var text = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center };
+        text.Children.Add(titleRow);
+        text.Children.Add(new TextBlock
+        {
+            Text = subtitle,
+            FontSize = 12,
+            Foreground = Brush("UcTextMuted"),
+            TextTrimming = TextTrimming.CharacterEllipsis,
+        });
+
+        var grid = new Grid { ColumnSpacing = 12 };
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
         grid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-        if (selected)
-            grid.Children.Add(new FontIcon { Glyph = "", FontSize = 14, Foreground = Brush("UcBrand"), FontFamily = (FontFamily)Application.Current.Resources["UcIcons"] });
+        grid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+        grid.Children.Add(tile);
         Grid.SetColumn(text, 1);
         grid.Children.Add(text);
+        var trailing = available ? Radio(selected) : Soon();
+        Grid.SetColumn(trailing, 2);
+        grid.Children.Add(trailing);
+
+        var name = available ? $"{title}, {subtitle}" : $"{title}, {subtitle}, coming soon";
+        if (!available)
+        {
+            // Not a button: nothing to press yet.
+            var row = new Border { Padding = new Thickness(10), CornerRadius = new CornerRadius(12), Opacity = 0.6, Child = grid };
+            AutomationProperties.SetName(row, name);
+            return row;
+        }
 
         var button = new Button
         {
             Content = grid,
             Style = (Style)Application.Current.Resources["UcRowButton"],
+            Padding = new Thickness(10),
+            CornerRadius = new CornerRadius(12),
+            Margin = new Thickness(0),
+            BorderThickness = new Thickness(1),
+            BorderBrush = selected ? Brush("UcBrandBorder") : new SolidColorBrush(Microsoft.UI.Colors.Transparent),
             Background = selected ? Brush("UcBrandSurface") : new SolidColorBrush(Microsoft.UI.Colors.Transparent),
-            IsEnabled = enabled || selected,
         };
-        AutomationProperties.SetName(button, subtitle is null ? title : $"{title}, {subtitle}");
+        AutomationProperties.SetName(button, name);
         if (selected) AutomationProperties.SetItemStatus(button, "Selected");
-        if (onClick is not null) button.Click += (_, _) => onClick();
         return button;
     }
 
+    /// <summary>Compact size tile: an "Aa" sample at the real scale plus its percentage; the name is in the tooltip.</summary>
+    private FrameworkElement SizeTile(string label, double scale, bool selected, Action onClick)
+    {
+        var content = new StackPanel { Spacing = 2 };
+        content.Children.Add(new Grid
+        {
+            Height = 22, // shared baseline row
+            Children =
+            {
+                new TextBlock
+                {
+                    Text = "Aa",
+                    FontSize = 13 * scale,
+                    FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+                    Foreground = Brush(selected ? "UcBrand" : "UcTextPrimary"),
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Bottom,
+                },
+            },
+        });
+        content.Children.Add(new TextBlock
+        {
+            Text = $"{scale * 100:0}%",
+            FontSize = 10,
+            Foreground = Brush(selected ? "UcBrand" : "UcTextMuted"),
+            HorizontalAlignment = HorizontalAlignment.Center,
+        });
+
+        var button = new Button
+        {
+            Content = content,
+            Style = (Style)Application.Current.Resources["UcRowButton"],
+            Padding = new Thickness(4, 6, 4, 6),
+            CornerRadius = new CornerRadius(10),
+            Margin = new Thickness(0),
+            BorderThickness = new Thickness(1),
+            BorderBrush = Brush(selected ? "UcBrandBorder" : "UcBorderSubtle"),
+            Background = Brush(selected ? "UcBrandSurface" : "UcSurfaceSubtle"),
+        };
+        ToolTipService.SetToolTip(button, label);
+        AutomationProperties.SetName(button, $"{label}, {scale * 100:0} percent");
+        if (selected) AutomationProperties.SetItemStatus(button, "Selected");
+        button.Click += (_, _) => onClick();
+        return button;
+    }
+
+    private FrameworkElement Radio(bool selected)
+    {
+        var grid = new Grid { Width = 20, Height = 20, VerticalAlignment = VerticalAlignment.Center };
+        grid.Children.Add(new Microsoft.UI.Xaml.Shapes.Ellipse
+        {
+            Fill = selected ? Brush("UcBrand") : new SolidColorBrush(Microsoft.UI.Colors.Transparent),
+            Stroke = Brush(selected ? "UcBrand" : "UcBorderSubtle"),
+            StrokeThickness = 1.5,
+        });
+        if (selected)
+        {
+            grid.Children.Add(new FontIcon
+            {
+                Glyph = "",
+                FontSize = 10,
+                FontFamily = (FontFamily)Application.Current.Resources["UcIcons"],
+                Foreground = Brush("UcOnBrand"),
+            });
+        }
+        return grid;
+    }
+
+    private FrameworkElement Soon()
+    {
+        var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
+        content.Children.Add(new FontIcon
+        {
+            Glyph = "",
+            FontSize = 9,
+            FontFamily = (FontFamily)Application.Current.Resources["UcIcons"],
+            Foreground = Brush("UcTextMuted"),
+        });
+        content.Children.Add(new TextBlock
+        {
+            Text = "Soon",
+            FontSize = 10,
+            FontWeight = Microsoft.UI.Text.FontWeights.Bold,
+            Foreground = Brush("UcTextMuted"),
+        });
+        return new Border
+        {
+            Padding = new Thickness(8, 3, 8, 3),
+            CornerRadius = new CornerRadius(6),
+            Background = Brush("UcSurfaceRaised"),
+            VerticalAlignment = VerticalAlignment.Center,
+            Child = content,
+        };
+    }
+
+    private Border Pill(string text, string background, string foreground) => new()
+    {
+        Padding = new Thickness(6, 1, 6, 1),
+        CornerRadius = new CornerRadius(6),
+        Background = Brush(background),
+        VerticalAlignment = VerticalAlignment.Center,
+        Child = new TextBlock
+        {
+            Text = text,
+            FontSize = 9,
+            FontWeight = Microsoft.UI.Text.FontWeights.ExtraBold,
+            CharacterSpacing = 60,
+            Foreground = Brush(foreground),
+        },
+    };
+
     private static string? TierLabel(Tier t) => t switch { Tier.Free => "FREE", Tier.Pro => "PRO", Tier.Ultra => "ULTRA", _ => null };
+
 
     // ═══ Update (section 17) ═════════════════════════════════════════════════
 
@@ -581,19 +890,14 @@ public sealed partial class PlaygroundPage : Page
             _s.Diagnostics.Warn("update.check_failed", ("type", ex.GetType().Name));
             return;
         }
-        if (update is null || _dialogOpen) return;
+        if (update is null || _dialogOpen || _tour?.IsRunning == true) return;
 
-        var notes = string.IsNullOrWhiteSpace(update.Notes) ? "" : "\n\n" + update.Notes;
-        var ask = new ContentDialog
-        {
-            XamlRoot = XamlRoot,
-            Title = "Update available",
-            Content = $"Unicaption {update.Version} is ready to install.{notes}" +
-                      (_s.Session.IsBusy ? "\n\nThe current session will be stopped first." : ""),
-            PrimaryButtonText = "Update",
-            CloseButtonText = "Later",
-            DefaultButton = ContentDialogButton.Primary,
-        };
+        var notes = update.Notes?.Trim() ?? "";
+        if (_s.Session.IsBusy) notes = (notes.Length > 0 ? notes + "\n\n" : "") + "The current session will be stopped first.";
+        var ask = Ui.Dialog(this, "", "Update available", $"Unicaption {update.Version} is ready to install.",
+            notes.Length > 0 ? notes : null);
+        ask.PrimaryButtonText = "Update";
+        ask.CloseButtonText = "Later";
         if (await ShowDialogAsync(ask) != ContentDialogResult.Primary) return;
         await InstallUpdateAsync(update);
     }
@@ -603,16 +907,11 @@ public sealed partial class PlaygroundPage : Page
         // UPDATE 03 / AC 37: never install during capture; stop and submit usage first.
         await _s.Session.ShutdownAsync();
 
-        var bar = new ProgressBar { IsIndeterminate = true, Width = 320, Margin = new Thickness(0, 8, 0, 0) };
+        var bar = new ProgressBar { IsIndeterminate = true, Width = 360, Margin = new Thickness(0, 8, 0, 0), Foreground = Brush("UcBrand") };
         var cts = new CancellationTokenSource();
         var finished = false;
-        var dialog = new ContentDialog
-        {
-            XamlRoot = XamlRoot,
-            Title = "Downloading update",
-            Content = bar,
-            CloseButtonText = "Cancel",
-        };
+        var dialog = Ui.Dialog(this, "", "Downloading update", $"Unicaption {update.Version}", bar);
+        dialog.CloseButtonText = "Cancel";
         dialog.Closing += (_, args) =>
         {
             if (!finished) cts.Cancel();
@@ -657,6 +956,48 @@ public sealed partial class PlaygroundPage : Page
             cts.Dispose();
         }
     }
+
+    // ═══ Onboarding ══════════════════════════════════════════════════════════
+
+    private void StartTour()
+    {
+        if (_tour?.IsRunning == true || _dialogOpen) return;
+        _tour = new OnboardingTour(PageRoot, TourSteps());
+        _tour.Finished += (_, _) =>
+        {
+            _s.Settings.OnboardingCompleted = true;
+            _s.Settings.Save();
+        };
+        _tour.Start();
+    }
+
+    private IEnumerable<OnboardingTour.Step> TourSteps() =>
+    [
+        new(null, "", "Welcome to Unicaption",
+            "Live captions and translation for anything you hear. Here is a one-minute tour of your workspace.", Hero: true),
+        new(SourcePanel, "", "Live transcription",
+            "Speech appears here as it is recognised. Use the language pill to choose what is being spoken.",
+            TeachingTipPlacementMode.Right),
+        new(TranslationPanel, "", "Live translation",
+            "The same speech, translated as you go. Pick the target language from the pill on this panel.",
+            TeachingTipPlacementMode.Left),
+        new(MicNav, "", "Choose what to listen to",
+            "Capture your microphone, the computer's sound (calls, videos), or both at once.",
+            TeachingTipPlacementMode.Right),
+        new(ContextNav, "", "Add context",
+            "Names, products and jargon you add here help recognition get specialist terms right.",
+            TeachingTipPlacementMode.Right),
+        new(NotesNav, "", "Notes and dictionary",
+            "Keep a notepad beside the captions, or look up a single word without leaving the session.",
+            TeachingTipPlacementMode.Right),
+        new(AccountButton, "", "Your account",
+            "Click your name for text size, theme, help and log out.", TeachingTipPlacementMode.Right),
+        new(MiniAvatar, "", "Your account",
+            "Click your avatar for text size, theme, help and log out.", TeachingTipPlacementMode.Right),
+        new(StartButton, "", "You're ready",
+            "Press Start to begin captioning, and press it again to stop. You can replay this tour from Support.",
+            TeachingTipPlacementMode.Top),
+    ];
 
     // ═══ Helpers ═════════════════════════════════════════════════════════════
 

@@ -23,8 +23,8 @@ Belgilar: **✅ bajarildi** · **🧪 unit-test bilan tasdiqlangan** · **🪟 W
 | AUTH 01 Cancel → login holatiga qaytish, crash yo‘q | ✅ 🪟 | `LoginPage.OnCancel` |
 | AUTH 02 Token OS himoyasida (DPAPI), muddatidan oldin refresh, 401’da bitta refresh, imkonsiz bo‘lsa qayta login | ✅ 🧪 | `AuthService.GetTokenAsync`, `DpapiSecretStore`, `ApiClient.SendAsync` |
 | AUTH 02 Log out sessiyani to‘xtatadi, hisobni tozalaydi, theme saqlanadi | ✅ | `MainWindow.SignOutAsync` |
-| NAV 01 Profil kartasida Usage & Analytics va Billing & Plans | ✅ | `PlaygroundPage.xaml` (mini rejimda ikonka) |
-| NAV 02 Usage/Billing’ga o‘tish capture’ni to‘xtatmaydi; sessiya vaqtida til/model/manba bloklangan | ✅ | `SessionController` sahifadan tashqarida; `RenderSettings` |
+| NAV 01 Profil kartasida Usage & Analytics va Billing & Plans | ➖ mahsulot qarori bilan olib tashlandi: kartada faqat tarif va qolgan daqiqalar | `PlaygroundPage.xaml` (mini rejimda tooltip) |
+| NAV 02 Sessiya vaqtida til/model/manba bloklangan (Usage/Billing sahifalari yo‘q) | ✅ | `RenderSettings` |
 | SESSION 01 7 holat, bitta start/capture/socket/clock, sessiya ID bilan kech callback’lar inkor | ✅ 🧪 | `Core/Session/SessionController.cs` |
 | SESSION 02 Start/Stop ketma-ketligi, qisman resurslarni yopish, Stop’dan keyin matn qoladi | ✅ 🧪 | o‘sha |
 | TIME 01 QPC/monotonic, UI tick faqat ko‘rsatadi, ekran va billing bir manbadan, Stop snapshot | ✅ 🧪 | `Core/Time/MonotonicClock.cs` |
@@ -43,15 +43,15 @@ Belgilar: **✅ bajarildi** · **🧪 unit-test bilan tasdiqlangan** · **🪟 W
 | WS 03 Context’ni backend’ga uzatish, Community | ⏸ | Shartnoma yo‘q → yuborilmaydi; Community MVP’dan chiqarilgan |
 | WS 04 Notes: copy/clear/close/drag/resize, 220–600 × 200–700, oynadan chiqmaydi, run davomida saqlanadi | ✅ 🪟 | `Controls/NotesPanel` |
 | WS 05 Dictionary: translate endpoint, Enter yoki 300 ms debounce, loading/result/empty/error/retry, eski javob inkor | ✅ 🪟 | `Controls/DictionaryPanel` |
-| WS 05 Support: faqat haqiqiy manzillar; Start Tour yashirin; diagnostika nusxasi | ✅ | `Dialogs/SupportDialog` |
-| ACCOUNT 01 Usage: loading/loaded/cached/error/retry, soxta Free/0 yo‘q, history «Coming soon», <760 bir ustun | ✅ 🧪 | `Core/Api/AccountService.cs`, `Views/UsagePage` |
-| BILL 01–02 Hisobni ko‘rish + tasdiqlangan cancel (tasdiq, pending, xato, reload); ishlamaydigan CTA’lar yashirin | ✅ | `Views/BillingPage` |
+| WS 05 Support: faqat haqiqiy manzillar; Start Tour (onboarding qayta ochiladi); diagnostika nusxasi | ✅ | `Dialogs/SupportDialog`, `Controls/OnboardingTour` |
+| ACCOUNT 01 Hisob holati loading/loaded/cached/error/retry, soxta Free/0 yo‘q (Usage sahifasi olib tashlandi) | ✅ 🧪 | `Core/Api/AccountService.cs`, profil kartasi |
+| BILL 01–02 Billing sahifasi | ➖ mahsulot qarori bilan olib tashlandi | — |
 | BILL 02 Checkout / top-up / karta | ⏸ | `price_id` va to‘lov shartnomasi kelgach; `ApiClient.CreateCheckoutSessionAsync` tayyor |
 | HTTP 01 Timeout 10/30 s, GET bounded retry, POST/usage avtomatik qayta yuborilmaydi, raw body ko‘rsatilmaydi | ✅ 🧪 | `Core/Api/ApiClient.cs` |
 | DATA 02 Yagona normalizatsiya, aliaslar, manfiy limit xato, «unlimited» ≠ 0, 0.55 formulasi yo‘q | ✅ 🧪 | `Core/Api/JsonNormalizer.cs` |
 | DATA 03 Theme, tillar, shrift, sidebar, audio manba saqlanadi; token alohida | ✅ | `Core/Settings/WorkspaceSettings.cs` |
 | DATA 04 So‘z soni UI’dan mustaqil, faqat final tokenlar | ✅ 🧪 | `TranscriptStore.SessionWordCount` |
-| RT 01–02 auth → authenticated (10 s) → config → binary; ping 30 s; token parsing qoidalari | ✅ 🧪 | `Core/Realtime/*` |
+| RT 01–02 auth → authenticated (10 s) → config → binary; ping 30 s; token parsing qoidalari. Haqiqiy backend `{"status":"authenticated"}` va `{"error":"…"}` (type’siz) yuboradi — ikkala shakl qabul qilinadi | ✅ 🧪 | `Core/Realtime/*` |
 | RT 03 closed/error/timeout → SessionController; `soniox_disconnected` → config 3 marta | ✅ 🧪 | o‘sha |
 | RT 03 Reconnect/resume | ⏸ | Server sequence/session shartnomasi kerak |
 | UI 01–03 Tokenlar, tipografiya, geometriya (52/264/72/16/48/20…), 900 chegarasida mini sidebar, 180 ms easeOut | ✅ 🪟 | `Themes/*`, `PlaygroundPage` |

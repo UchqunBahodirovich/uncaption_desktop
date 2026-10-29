@@ -39,7 +39,6 @@ public sealed record OnDemandUsage
     public double UsedPercent => TotalDollars <= 0 ? 0 : Math.Clamp(UsedDollars / TotalDollars, 0, 1);
 }
 
-public sealed record UserStats(int SessionsCount, double TotalMinutes, int ActiveStreak);
 
 public sealed record ContextTerm(string Term, string? Description);
 

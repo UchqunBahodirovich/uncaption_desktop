@@ -51,9 +51,6 @@ public sealed class ApiClient
     public async Task<OnDemandUsage> GetOnDemandAsync(CancellationToken ct = default) =>
         JsonNormalizer.ParseOnDemand(await SendAsync(HttpMethod.Get, "api/user/ondemand/", null, ct));
 
-    public async Task<UserStats> GetStatsAsync(CancellationToken ct = default) =>
-        JsonNormalizer.ParseStats(await SendAsync(HttpMethod.Get, "api/user/stats/", null, ct));
-
     public async Task<string> CreateCheckoutSessionAsync(string priceId, string mode = "subscription", CancellationToken ct = default) =>
         JsonNormalizer.ParseCheckoutUrl(await SendAsync(HttpMethod.Post, "create-checkout-session/",
             new JsonObject { ["price_id"] = priceId, ["mode"] = mode }, ct));
@@ -74,7 +71,7 @@ public sealed class ApiClient
 
     public async Task<string> TranslateAsync(string text, string source, string target, CancellationToken ct = default) =>
         JsonNormalizer.ParseTranslation(await SendAsync(HttpMethod.Post, "api/translate/",
-            new JsonObject { ["text"] = text, ["source_language"] = source, ["target_language"] = target }, ct));
+            new JsonObject { ["text"] = text, ["source_lang"] = source, ["target_lang"] = target }, ct));
 
     internal async Task<JsonObject> SendAsync(HttpMethod method, string path, JsonObject? body, CancellationToken ct)
     {

@@ -51,23 +51,39 @@ public static class TokenParser
     };
 }
 
-/// <summary>Builds the config message from RT 01. Only fields the backend is known to accept.</summary>
-public sealed record RealtimeConfig(string Model, string SourceLanguage, string TargetLanguage)
+/// <summary>
+/// Builds the config message from RT 01. Only fields the backend is known to accept;
+/// <c>language_hints</c> (primary first, then hints) is added only when the user picked hints,
+/// so the default message is unchanged.
+/// </summary>
+public sealed record RealtimeConfig(string Model, string SourceLanguage, string TargetLanguage,
+    IReadOnlyList<string>? LanguageHints = null)
 {
-    public string ToJson() => new JsonObject
+    public string ToJson()
     {
-        ["type"] = "config",
-        ["model"] = Model,
-        ["language"] = SourceLanguage,
-        ["enable_speaker_diarization"] = true,
-        ["enable_streaming_translation"] = true,
-        ["translation"] = new JsonObject
+        var json = new JsonObject
         {
-            ["type"] = "two_way",
-            ["language_a"] = SourceLanguage,
-            ["language_b"] = TargetLanguage,
-        },
-    }.ToJsonString();
+            ["type"] = "config",
+            ["model"] = Model,
+            ["language"] = SourceLanguage,
+            ["enable_speaker_diarization"] = true,
+            ["enable_streaming_translation"] = true,
+            ["translation"] = new JsonObject
+            {
+                ["type"] = "two_way",
+                ["language_a"] = SourceLanguage,
+                ["language_b"] = TargetLanguage,
+            },
+        };
+        var hints = (LanguageHints ?? []).Where(h => h != SourceLanguage).Distinct().ToList();
+        if (hints.Count > 0)
+        {
+            var array = new JsonArray { SourceLanguage };
+            foreach (var h in hints) array.Add(h);
+            json["language_hints"] = array;
+        }
+        return json.ToJsonString();
+    }
 
     internal static string AuthJson(string token) =>
         new JsonObject { ["type"] = "auth", ["token"] = token }.ToJsonString();

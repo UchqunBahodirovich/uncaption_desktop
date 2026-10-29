@@ -2,6 +2,10 @@
     xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
+    <!-- ═══ Motion ═════════════════════════════════════════════════════════════
+         Strong ease-out (Exponential 6 ≈ cubic-bezier(0.23, 1, 0.32, 1)) everywhere. Press feedback
+         scales to 0.97 in 100 ms and releases in 160 ms; panels 150–220 ms (Controls/Motion.cs). -->
+
     <!-- ═══ Buttons ════════════════════════════════════════════════════════════
          Every clickable element has default / hover / pressed / focused / disabled
          states (UI 04). Focus uses the system focus ring (always visible on keyboard). -->
@@ -11,7 +15,11 @@
               Background="{TemplateBinding Background}"
               BorderBrush="{TemplateBinding BorderBrush}"
               BorderThickness="{TemplateBinding BorderThickness}"
-              CornerRadius="{TemplateBinding CornerRadius}">
+              CornerRadius="{TemplateBinding CornerRadius}"
+              RenderTransformOrigin="0.5,0.5">
+            <Grid.RenderTransform>
+                <ScaleTransform x:Name="PressScale" />
+            </Grid.RenderTransform>
             <Border x:Name="Overlay" Background="{ThemeResource UcTextPrimary}" Opacity="0"
                     CornerRadius="{TemplateBinding CornerRadius}" />
             <ContentPresenter x:Name="Presenter"
@@ -23,6 +31,14 @@
                               VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
             <VisualStateManager.VisualStateGroups>
                 <VisualStateGroup x:Name="CommonStates">
+                    <!-- Leaving Pressed eases the scale back instead of snapping to 1. -->
+                    <VisualStateGroup.Transitions>
+                        <VisualTransition From="Pressed" GeneratedDuration="0:0:0.16">
+                            <VisualTransition.GeneratedEasingFunction>
+                                <ExponentialEase EasingMode="EaseOut" Exponent="6" />
+                            </VisualTransition.GeneratedEasingFunction>
+                        </VisualTransition>
+                    </VisualStateGroup.Transitions>
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="PointerOver">
                         <VisualState.Setters>
@@ -30,14 +46,29 @@
                         </VisualState.Setters>
                     </VisualState>
                     <VisualState x:Name="Pressed">
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleX"
+                                             To="0.97" Duration="0:0:0.1">
+                                <DoubleAnimation.EasingFunction>
+                                    <ExponentialEase EasingMode="EaseOut" Exponent="6" />
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                            <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleY"
+                                             To="0.97" Duration="0:0:0.1">
+                                <DoubleAnimation.EasingFunction>
+                                    <ExponentialEase EasingMode="EaseOut" Exponent="6" />
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
                         <VisualState.Setters>
                             <Setter Target="Overlay.Opacity" Value="0.12" />
                         </VisualState.Setters>
                     </VisualState>
+                    <!-- Disabled only dims: swapping the background would hide content whose colours
+                         are set per state (e.g. a filled, selected nav item while a session runs). -->
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Target="Root.Background" Value="{ThemeResource UcSurfaceRaised}" />
-                            <Setter Target="Presenter.Foreground" Value="{ThemeResource UcTextMuted}" />
+                            <Setter Target="Root.Opacity" Value="0.4" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -50,7 +81,11 @@
               Background="{TemplateBinding Background}"
               BorderBrush="{TemplateBinding BorderBrush}"
               BorderThickness="{TemplateBinding BorderThickness}"
-              CornerRadius="{TemplateBinding CornerRadius}">
+              CornerRadius="{TemplateBinding CornerRadius}"
+              RenderTransformOrigin="0.5,0.5">
+            <Grid.RenderTransform>
+                <ScaleTransform x:Name="PressScale" />
+            </Grid.RenderTransform>
             <ContentPresenter x:Name="Presenter"
                               Content="{TemplateBinding Content}"
                               ContentTemplate="{TemplateBinding ContentTemplate}"
@@ -60,6 +95,14 @@
                               VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
             <VisualStateManager.VisualStateGroups>
                 <VisualStateGroup x:Name="CommonStates">
+                    <!-- Leaving Pressed eases the scale back instead of snapping to 1. -->
+                    <VisualStateGroup.Transitions>
+                        <VisualTransition From="Pressed" GeneratedDuration="0:0:0.16">
+                            <VisualTransition.GeneratedEasingFunction>
+                                <ExponentialEase EasingMode="EaseOut" Exponent="6" />
+                            </VisualTransition.GeneratedEasingFunction>
+                        </VisualTransition>
+                    </VisualStateGroup.Transitions>
                     <VisualState x:Name="Normal" />
                     <VisualState x:Name="PointerOver">
                         <VisualState.Setters>
@@ -67,15 +110,29 @@
                         </VisualState.Setters>
                     </VisualState>
                     <VisualState x:Name="Pressed">
+                        <Storyboard>
+                            <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleX"
+                                             To="0.97" Duration="0:0:0.1">
+                                <DoubleAnimation.EasingFunction>
+                                    <ExponentialEase EasingMode="EaseOut" Exponent="6" />
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                            <DoubleAnimation Storyboard.TargetName="PressScale" Storyboard.TargetProperty="ScaleY"
+                                             To="0.97" Duration="0:0:0.1">
+                                <DoubleAnimation.EasingFunction>
+                                    <ExponentialEase EasingMode="EaseOut" Exponent="6" />
+                                </DoubleAnimation.EasingFunction>
+                            </DoubleAnimation>
+                        </Storyboard>
                         <VisualState.Setters>
                             <Setter Target="Root.Background" Value="{ThemeResource UcBrandHover}" />
                             <Setter Target="Root.Opacity" Value="0.9" />
                         </VisualState.Setters>
                     </VisualState>
+                    <!-- Brand stays brand while busy ("Connecting…"), just quieter. -->
                     <VisualState x:Name="Disabled">
                         <VisualState.Setters>
-                            <Setter Target="Root.Background" Value="{ThemeResource UcSurfaceRaised}" />
-                            <Setter Target="Presenter.Foreground" Value="{ThemeResource UcTextMuted}" />
+                            <Setter Target="Root.Opacity" Value="0.6" />
                         </VisualState.Setters>
                     </VisualState>
                 </VisualStateGroup>
@@ -125,10 +182,10 @@
         <Setter Property="Background" Value="{ThemeResource UcError}" />
     </Style>
 
-    <!-- Start / Stop: pill, padding 32×13, 15/700 -->
+    <!-- Start / Stop: rounded rectangle (radius 12), padding 28×12, 15/700 -->
     <Style x:Key="UcPillButton" TargetType="Button" BasedOn="{StaticResource UcPrimaryButton}">
-        <Setter Property="CornerRadius" Value="999" />
-        <Setter Property="Padding" Value="32,13" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="28,12" />
         <Setter Property="FontSize" Value="15" />
         <Setter Property="FontWeight" Value="Bold" />
         <Setter Property="MinWidth" Value="140" />
@@ -143,6 +200,49 @@
         <Setter Property="Foreground" Value="{ThemeResource UcTextMuted}" />
         <Setter Property="FontFamily" Value="{StaticResource UcIcons}" />
         <Setter Property="FontSize" Value="16" />
+    </Style>
+
+    <!-- ═══ Window caption buttons (custom title bar) ═══════════════════════════
+         40×32, radius 8, 10px glyphs like the system ones. Close turns red on hover. -->
+    <Style x:Key="UcCaptionButton" TargetType="Button" BasedOn="{StaticResource UcIconButton}">
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="FontSize" Value="10" />
+        <Setter Property="Foreground" Value="{ThemeResource UcTextSecondary}" />
+        <Setter Property="IsTabStop" Value="False" />
+    </Style>
+
+    <ControlTemplate x:Key="UcCloseCaptionTemplate" TargetType="Button">
+        <Grid x:Name="Root" Background="Transparent" CornerRadius="{TemplateBinding CornerRadius}">
+            <ContentPresenter x:Name="Presenter"
+                              Content="{TemplateBinding Content}"
+                              Foreground="{TemplateBinding Foreground}"
+                              HorizontalContentAlignment="Center"
+                              VerticalContentAlignment="Center" />
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal" />
+                    <VisualState x:Name="PointerOver">
+                        <VisualState.Setters>
+                            <Setter Target="Root.Background" Value="{ThemeResource UcError}" />
+                            <Setter Target="Presenter.Foreground" Value="White" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                            <Setter Target="Root.Background" Value="{ThemeResource UcError}" />
+                            <Setter Target="Root.Opacity" Value="0.8" />
+                            <Setter Target="Presenter.Foreground" Value="White" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Disabled" />
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+        </Grid>
+    </ControlTemplate>
+
+    <Style x:Key="UcCloseCaptionButton" TargetType="Button" BasedOn="{StaticResource UcCaptionButton}">
+        <Setter Property="Template" Value="{StaticResource UcCloseCaptionTemplate}" />
     </Style>
 
     <!-- Sidebar nav item: radius 10, vertical padding 11 -->
@@ -176,12 +276,18 @@
 
     <Style x:Key="UcChipButton" TargetType="Button" BasedOn="{StaticResource UcButtonBase}">
         <Setter Property="Padding" Value="12,6" />
-        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="CornerRadius" Value="8" />
         <Setter Property="Background" Value="{ThemeResource UcSurfaceCard}" />
         <Setter Property="BorderBrush" Value="{ThemeResource UcBorder}" />
         <Setter Property="BorderThickness" Value="1" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="Medium" />
+    </Style>
+
+    <Style x:Key="UcPrimaryChipButton" TargetType="Button" BasedOn="{StaticResource UcChipButton}">
+        <Setter Property="Background" Value="{ThemeResource UcBrandSurface}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource UcBrandBorder}" />
+        <Setter Property="Foreground" Value="{ThemeResource UcBrand}" />
     </Style>
 
     <Style x:Key="UcLinkButton" TargetType="HyperlinkButton">
@@ -204,9 +310,33 @@
         <Setter Property="Padding" Value="20" />
     </Style>
 
+    <Style x:Key="UcFlyoutPresenter" TargetType="FlyoutPresenter">
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+
+    <!-- Icon tile used by every dialog and tour step header -->
+    <Style x:Key="UcIconTile" TargetType="Border">
+        <Setter Property="Width" Value="40" />
+        <Setter Property="Height" Value="40" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Background" Value="{ThemeResource UcBrandSurface}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource UcBrandBorder}" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+    </Style>
+
+    <Style x:Key="UcTileIcon" TargetType="FontIcon">
+        <Setter Property="FontFamily" Value="{StaticResource UcIcons}" />
+        <Setter Property="FontSize" Value="18" />
+        <Setter Property="Foreground" Value="{ThemeResource UcBrand}" />
+    </Style>
+
+    <!-- Text badges are rounded rectangles (radius 6), never pills. -->
     <Style x:Key="UcBadge" TargetType="Border">
         <Setter Property="Background" Value="{ThemeResource UcBrandSurface}" />
-        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="CornerRadius" Value="6" />
         <Setter Property="Padding" Value="8,2" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
@@ -244,14 +374,18 @@
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
+    <!-- Large text gets slightly negative tracking (-0.015em); body text stays at 0. -->
     <Style x:Key="UcDialogTitle" TargetType="TextBlock" BasedOn="{StaticResource UcText}">
         <Setter Property="FontSize" Value="20" />
-        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="CharacterSpacing" Value="-15" />
+        <Setter Property="LineHeight" Value="26" />
     </Style>
 
     <Style x:Key="UcPageTitle" TargetType="TextBlock" BasedOn="{StaticResource UcText}">
         <Setter Property="FontSize" Value="22" />
         <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="CharacterSpacing" Value="-15" />
     </Style>
 
     <!-- Sidebar label 14/500 -->
@@ -274,6 +408,14 @@
         <Setter Property="FontSize" Value="14" />
         <Setter Property="CornerRadius" Value="10" />
         <Setter Property="Padding" Value="14,10" />
+    </Style>
+
+    <!-- Multi-line boxes scroll internally; extra right padding keeps text off the scrollbar. -->
+    <Style x:Key="UcMultilineTextBox" TargetType="TextBox" BasedOn="{StaticResource UcTextBox}">
+        <Setter Property="Padding" Value="14,10,24,10" />
+        <Setter Property="AcceptsReturn" Value="True" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="ScrollViewer.VerticalScrollBarVisibility" Value="Auto" />
     </Style>
 
 </ResourceDictionary>

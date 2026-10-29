@@ -11,10 +11,16 @@ public sealed class WorkspaceSettings
 {
     public bool DarkMode { get; set; }
     public string SourceLanguage { get; set; } = "en";
+
+    /// <summary>Extra languages that may also be spoken (after the primary <see cref="SourceLanguage"/>).</summary>
+    public List<string> SourceLanguageHints { get; set; } = [];
     public string TargetLanguage { get; set; } = "ru";
     public double TextScale { get; set; } = 1.0;
     public bool SidebarExpanded { get; set; } = true;
     public int AudioSource { get; set; }
+
+    /// <summary>Set once the first-run tour was finished or skipped; Support → Start tour replays it.</summary>
+    public bool OnboardingCompleted { get; set; }
 
     /// <summary>Custom Context (≤300 chars). Kept locally until a backend transport is agreed (WS 03).</summary>
     public string CustomContext { get; set; } = "";
@@ -22,6 +28,7 @@ public sealed class WorkspaceSettings
 
     public static readonly double[] AllowedScales = [0.85, 1.0, 1.15, 1.30];
     public const int MaxContextLength = 300;
+    public const int MaxLanguageHints = 4;
 
     [JsonIgnore] public string? FilePath { get; private set; }
 
@@ -64,6 +71,11 @@ public sealed class WorkspaceSettings
         if (AudioSource is < 0 or > 2) AudioSource = 0;
         if (string.IsNullOrWhiteSpace(SourceLanguage)) SourceLanguage = "en";
         if (string.IsNullOrWhiteSpace(TargetLanguage)) TargetLanguage = "ru";
+        SourceLanguageHints = (SourceLanguageHints ?? [])
+            .Where(h => !string.IsNullOrWhiteSpace(h) && h != SourceLanguage)
+            .Distinct()
+            .Take(MaxLanguageHints)
+            .ToList();
         CustomContext ??= "";
         TranslationPrompt ??= "";
         if (CustomContext.Length > MaxContextLength) CustomContext = CustomContext[..MaxContextLength];

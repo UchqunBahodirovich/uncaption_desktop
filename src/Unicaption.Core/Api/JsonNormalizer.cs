@@ -5,15 +5,17 @@ namespace Unicaption.Core.Api;
 
 /// <summary>
 /// The single normalisation layer for backend JSON (DATA 02). The UI never parses
-/// raw payloads. Aliases are kept for compatibility with the legacy client.
+/// raw payloads. The deployed backend's field names come first (verified against
+/// views.py and live responses); older aliases are kept for compatibility.
 /// </summary>
 public static class JsonNormalizer
 {
     public static UserPlan ParsePlan(JsonObject json)
     {
-        var limitMinutes = OptionalNumber(json, "limit_minutes", "limit");
+        // minutes_limit already includes on-demand minutes (subscription limit + ondemand_remaining).
+        var limitMinutes = OptionalNumber(json, "minutes_limit", "limit_minutes", "limit");
         var limitTranslations = OptionalNumber(json, "limit_translations", "translations_limit");
-        var used = OptionalNumber(json, "used_minutes", "used") ?? 0;
+        var used = OptionalNumber(json, "minutes_used", "used_minutes", "used") ?? 0;
         var usedTr = OptionalNumber(json, "used_translations", "translations_used") ?? 0;
         if (limitMinutes < 0 || limitTranslations < 0 || used < 0 || usedTr < 0)
             throw new ApiSchemaException("Plan contains negative values.");
@@ -23,8 +25,9 @@ public static class JsonNormalizer
             PlanName = OptionalString(json, "plan", "plan_name") ?? "Free",
             UsedMinutes = used,
             LimitMinutes = limitMinutes,
-            ExpiresAt = ParseDate(OptionalString(json, "expires_at")),
-            IsActive = OptionalBool(json, "is_active") ?? true,
+            ExpiresAt = ParseDate(OptionalString(json, "expiry_date", "expires_at")),
+            IsActive = OptionalBool(json, "is_active")
+                       ?? OptionalString(json, "status") is null or "active" or "trialing",
             UsedTranslations = usedTr,
             LimitTranslations = limitTranslations,
         };
@@ -35,7 +38,7 @@ public static class JsonNormalizer
         var balance = OptionalNumber(json, "balance", "balance_dollars") ?? 0;
         var used = OptionalNumber(json, "used_dollars", "used_amount") ?? 0;
         var total = OptionalNumber(json, "total_dollars", "total_amount") ?? 0;
-        var remaining = OptionalNumber(json, "remaining_minutes", "remaining");
+        var remaining = OptionalNumber(json, "ondemand_remaining", "remaining_minutes", "remaining");
         if (balance < 0 || used < 0 || total < 0 || remaining < 0)
             throw new ApiSchemaException("On-demand usage contains negative values.");
 
@@ -48,14 +51,9 @@ public static class JsonNormalizer
         };
     }
 
-    public static UserStats ParseStats(JsonObject json) => new(
-        (int)(OptionalNumber(json, "sessions_count", "sessions") ?? 0),
-        OptionalNumber(json, "total_minutes", "minutes") ?? 0,
-        (int)(OptionalNumber(json, "active_streak", "streak") ?? 0));
-
     public static ContextTerm ParseTerm(JsonObject json) => new(
         OptionalString(json, "term", "text") ?? "",
-        OptionalString(json, "description"));
+        OptionalString(json, "description", "category"));
 
     public static IReadOnlyList<ContextTerm> ParseTerms(JsonObject json)
     {
@@ -65,7 +63,7 @@ public static class JsonNormalizer
     }
 
     public static string ParseTranslation(JsonObject json) =>
-        OptionalString(json, "translated_text", "translation") ?? "";
+        OptionalString(json, "translatedText", "translated_text", "translation") ?? "";
 
     public static string ParseCheckoutUrl(JsonObject json) =>
         OptionalString(json, "url", "session_url") ?? "";
