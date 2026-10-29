@@ -1,0 +1,57 @@
+<UserControl
+    x:Class="Unicaption.App.Controls.DictionaryPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Width="300">
+
+    <!-- Dictionary: right overlay, width 300, header 56, left border -->
+    <Border Background="{ThemeResource UcSurfaceCard}" BorderBrush="{ThemeResource UcBorderSubtle}" BorderThickness="1,0,0,0">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="56" />
+                <RowDefinition Height="Auto" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <Grid Padding="16,0,8,0" BorderBrush="{ThemeResource UcBorderSubtle}" BorderThickness="0,0,0,1">
+                <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                    <FontIcon Glyph="&#xE82D;" FontFamily="{StaticResource UcIcons}" FontSize="18" Foreground="{ThemeResource UcBrand}" />
+                    <TextBlock Text="Dictionary" Style="{StaticResource UcText}" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
+                </StackPanel>
+                <Button Style="{StaticResource UcIconButton}" Content="&#xE711;" HorizontalAlignment="Right" Click="OnClose"
+                        ToolTipService.ToolTip="Close" AutomationProperties.Name="Close dictionary" />
+            </Grid>
+
+            <StackPanel Grid.Row="1" Padding="14" Spacing="6">
+                <TextBox x:Name="Query" Style="{StaticResource UcTextBox}" CornerRadius="24" PlaceholderText="Search a word..."
+                         TextChanged="OnQueryChanged" KeyDown="OnQueryKeyDown" AutomationProperties.Name="Search a word" />
+                <TextBlock x:Name="DirectionText" Style="{StaticResource UcMutedText}" />
+            </StackPanel>
+
+            <Grid Grid.Row="2" Padding="14,0,14,14">
+                <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+                    <FontIcon Glyph="&#xE82D;" FontFamily="{StaticResource UcIcons}" FontSize="40" Foreground="{ThemeResource UcBorderSubtle}" />
+                    <TextBlock x:Name="EmptyText" Text="Search for a word to see its translation" Style="{StaticResource UcSecondaryText}"
+                               FontSize="14" TextAlignment="Center" />
+                </StackPanel>
+
+                <ProgressRing x:Name="BusyRing" IsActive="False" Visibility="Collapsed" Width="32" Height="32"
+                              AutomationProperties.Name="Translating" />
+
+                <StackPanel x:Name="ErrorState" Visibility="Collapsed" VerticalAlignment="Center" Spacing="12">
+                    <TextBlock x:Name="ErrorMessage" Style="{StaticResource UcSecondaryText}" TextAlignment="Center" />
+                    <Button Content="Retry" Style="{StaticResource UcSecondaryButton}" HorizontalAlignment="Center" Click="OnRetry" />
+                </StackPanel>
+
+                <Border x:Name="ResultCard" Visibility="Collapsed" VerticalAlignment="Top" Padding="14" CornerRadius="12"
+                        Background="{ThemeResource UcSurfaceSubtle}" BorderBrush="{ThemeResource UcBorderSubtle}" BorderThickness="1">
+                    <StackPanel Spacing="6">
+                        <TextBlock x:Name="ResultSource" Style="{StaticResource UcMutedText}" />
+                        <TextBlock x:Name="ResultText" Style="{StaticResource UcText}" FontSize="16" FontWeight="SemiBold"
+                                   IsTextSelectionEnabled="True" AutomationProperties.LiveSetting="Polite" />
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

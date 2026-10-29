@@ -1,0 +1,102 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--
+      Design tokens from TZ section 12. Light/Dark are separate theme dictionaries;
+      every surface, text, input and dialog colour comes from here (AC 22).
+      Alpha: 7.84% = 14, 10.20% = 1A, 12.16% = 1F, 55% = 8C.
+    -->
+    <ResourceDictionary.ThemeDictionaries>
+        <ResourceDictionary x:Key="Light">
+            <SolidColorBrush x:Key="UcSurfacePage" Color="#F7F8FA" />
+            <SolidColorBrush x:Key="UcSurfaceCard" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="UcSurfaceNav" Color="#8CFFFFFF" />
+            <SolidColorBrush x:Key="UcSurfaceSubtle" Color="#F7F8FA" />
+            <SolidColorBrush x:Key="UcSurfaceRaised" Color="#EEF0F4" />
+            <SolidColorBrush x:Key="UcTextPrimary" Color="#1C2430" />
+            <SolidColorBrush x:Key="UcTextSecondary" Color="#4A5568" />
+            <SolidColorBrush x:Key="UcTextMuted" Color="#7A8394" />
+            <SolidColorBrush x:Key="UcBorderSubtle" Color="#E5E8EC" />
+            <SolidColorBrush x:Key="UcProgressTrack" Color="#E5E8EC" />
+            <SolidColorBrush x:Key="UcBorder" Color="#14000000" />
+            <SolidColorBrush x:Key="UcBrand" Color="#FF3D00" />
+            <SolidColorBrush x:Key="UcBrandHover" Color="#CC3200" />
+            <SolidColorBrush x:Key="UcBrandSurface" Color="#14FF3D00" />
+            <SolidColorBrush x:Key="UcBrandBorder" Color="#4DFF3D00" />
+            <SolidColorBrush x:Key="UcSuccess" Color="#16A34A" />
+            <SolidColorBrush x:Key="UcSuccessSurface" Color="#1A16A34A" />
+            <SolidColorBrush x:Key="UcError" Color="#DC2626" />
+            <SolidColorBrush x:Key="UcOnBrand" Color="#FFFFFF" />
+            <Color x:Key="UcBgStop0">#F2F4F8</Color>
+            <Color x:Key="UcBgStop1">#F7F8FA</Color>
+            <Color x:Key="UcBgStop2">#EAEDF4</Color>
+            <Color x:Key="UcGlowTop">#24FF3D00</Color>
+            <Color x:Key="UcGlowBottom">#0FFF3D00</Color>
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="Dark">
+            <SolidColorBrush x:Key="UcSurfacePage" Color="#0D1117" />
+            <SolidColorBrush x:Key="UcSurfaceCard" Color="#111827" />
+            <SolidColorBrush x:Key="UcSurfaceNav" Color="#8C111827" />
+            <SolidColorBrush x:Key="UcSurfaceSubtle" Color="#141920" />
+            <SolidColorBrush x:Key="UcSurfaceRaised" Color="#1C2430" />
+            <SolidColorBrush x:Key="UcTextPrimary" Color="#F0F4F8" />
+            <SolidColorBrush x:Key="UcTextSecondary" Color="#9BA8B9" />
+            <!-- #5A6578 from the TZ is below 4.5:1 on dark cards; muted body text uses this
+                 adjusted value (UI 05 allows a recorded token correction). -->
+            <SolidColorBrush x:Key="UcTextMuted" Color="#7D8899" />
+            <SolidColorBrush x:Key="UcBorderSubtle" Color="#1E2733" />
+            <SolidColorBrush x:Key="UcProgressTrack" Color="#1E2733" />
+            <SolidColorBrush x:Key="UcBorder" Color="#14FFFFFF" />
+            <SolidColorBrush x:Key="UcBrand" Color="#FF3D00" />
+            <SolidColorBrush x:Key="UcBrandHover" Color="#CC3200" />
+            <SolidColorBrush x:Key="UcBrandSurface" Color="#1FFF3D00" />
+            <SolidColorBrush x:Key="UcBrandBorder" Color="#4DFF3D00" />
+            <SolidColorBrush x:Key="UcSuccess" Color="#22C55E" />
+            <SolidColorBrush x:Key="UcSuccessSurface" Color="#1F22C55E" />
+            <SolidColorBrush x:Key="UcError" Color="#DC2626" />
+            <SolidColorBrush x:Key="UcOnBrand" Color="#FFFFFF" />
+            <Color x:Key="UcBgStop0">#0A0E1A</Color>
+            <Color x:Key="UcBgStop1">#0D1117</Color>
+            <Color x:Key="UcBgStop2">#141A2E</Color>
+            <Color x:Key="UcGlowTop">#24FF3D00</Color>
+            <Color x:Key="UcGlowBottom">#243B82F6</Color>
+        </ResourceDictionary>
+
+        <ResourceDictionary x:Key="HighContrast">
+            <SolidColorBrush x:Key="UcSurfacePage" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="UcSurfaceCard" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="UcSurfaceNav" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="UcSurfaceSubtle" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="UcSurfaceRaised" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="UcTextPrimary" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="UcTextSecondary" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="UcTextMuted" Color="{ThemeResource SystemColorGrayTextColor}" />
+            <SolidColorBrush x:Key="UcBorderSubtle" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="UcProgressTrack" Color="{ThemeResource SystemColorGrayTextColor}" />
+            <SolidColorBrush x:Key="UcBorder" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="UcBrand" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="UcBrandHover" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="UcBrandSurface" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="UcBrandBorder" Color="{ThemeResource SystemColorHighlightColor}" />
+            <SolidColorBrush x:Key="UcSuccess" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="UcSuccessSurface" Color="{ThemeResource SystemColorWindowColor}" />
+            <SolidColorBrush x:Key="UcError" Color="{ThemeResource SystemColorWindowTextColor}" />
+            <SolidColorBrush x:Key="UcOnBrand" Color="{ThemeResource SystemColorHighlightTextColor}" />
+            <Color x:Key="UcBgStop0">Black</Color>
+            <Color x:Key="UcBgStop1">Black</Color>
+            <Color x:Key="UcBgStop2">Black</Color>
+            <Color x:Key="UcGlowTop">Transparent</Color>
+            <Color x:Key="UcGlowBottom">Transparent</Color>
+        </ResourceDictionary>
+    </ResourceDictionary.ThemeDictionaries>
+
+    <!-- UI 01: IBM Plex Sans is not bundled in the source project; the explicit, licensed
+         fallback is Segoe UI Variable (Win 11) → Segoe UI (Win 10). To switch, drop the
+         Plex .ttf files into Assets/Fonts and change this one resource. -->
+    <FontFamily x:Key="UcFont">Segoe UI Variable Text, Segoe UI</FontFamily>
+    <FontFamily x:Key="UcIcons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+    <FontFamily x:Key="ContentControlThemeFontFamily">Segoe UI Variable Text, Segoe UI</FontFamily>
+
+</ResourceDictionary>

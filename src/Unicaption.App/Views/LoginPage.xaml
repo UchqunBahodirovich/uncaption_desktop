@@ -1,0 +1,65 @@
+<Page
+    x:Class="Unicaption.App.Views.LoginPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Background="Transparent">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="56" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!-- Top bar 56, logo 24 -->
+        <Border Background="{ThemeResource UcSurfaceCard}" BorderBrush="{ThemeResource UcBorderSubtle}"
+                BorderThickness="0,0,0,1" Padding="24,0">
+            <Image Source="ms-appx:///Assets/icon128.png" Width="24" Height="24"
+                   HorizontalAlignment="Left" AutomationProperties.Name="Unicaption" />
+        </Border>
+
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Border Style="{StaticResource UcPanel}" MaxWidth="400" Margin="16,32"
+                    HorizontalAlignment="Center" VerticalAlignment="Center" Padding="36,40,36,34">
+                <StackPanel>
+                    <Image Source="ms-appx:///Assets/icon128.png" Width="56" Height="56" AutomationProperties.AccessibilityView="Raw" />
+                    <TextBlock Text="Welcome to Unicaption" Style="{StaticResource UcText}" FontSize="24" FontWeight="ExtraBold"
+                               HorizontalAlignment="Center" TextAlignment="Center" Margin="0,22,0,0" />
+                    <TextBlock Text="Real-time transcription &amp; translation" Style="{StaticResource UcText}"
+                               Foreground="{ThemeResource UcTextMuted}" HorizontalAlignment="Center" Margin="0,8,0,0" />
+
+                    <!-- Trial banner: height 44, radius 8 -->
+                    <Border Height="44" Margin="0,32,0,0" CornerRadius="8" Background="{ThemeResource UcBrandSurface}"
+                            BorderBrush="{ThemeResource UcBrandBorder}" BorderThickness="1">
+                        <TextBlock Text="60 minutes free on sign up · No credit card" Style="{StaticResource UcText}"
+                                   FontSize="13" FontWeight="Bold" Foreground="{ThemeResource UcBrandHover}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                    </Border>
+
+                    <Button x:Name="GoogleButton" Style="{StaticResource UcPrimaryButton}" Margin="0,24,0,0"
+                            HorizontalAlignment="Stretch" Click="OnSignIn"
+                            AutomationProperties.Name="Continue with Google">
+                        <StackPanel Orientation="Horizontal" Spacing="8">
+                            <FontIcon Glyph="&#xE77B;" FontFamily="{StaticResource UcIcons}" FontSize="17" />
+                            <TextBlock x:Name="GoogleLabel" Text="Continue with Google" />
+                        </StackPanel>
+                    </Button>
+                    <HyperlinkButton x:Name="CancelLink" Content="Cancel" Visibility="Collapsed"
+                                     HorizontalAlignment="Center" Margin="0,6,0,0" Click="OnCancel" />
+
+                    <TextBlock x:Name="ErrorText" Visibility="Collapsed" Style="{StaticResource UcText}" FontSize="12"
+                               Foreground="{ThemeResource UcError}" TextAlignment="Center" Margin="0,12,0,0" />
+
+                    <StackPanel x:Name="LegalPanel" Margin="0,24,0,0" HorizontalAlignment="Center">
+                        <TextBlock Style="{StaticResource UcMutedText}" TextAlignment="Center"
+                                   Text="By signing in you agree to our" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="4">
+                            <HyperlinkButton x:Name="TermsLink" Content="Terms" Style="{StaticResource UcLinkButton}" Click="OnTerms" />
+                            <TextBlock x:Name="AndText" Text="and" Style="{StaticResource UcMutedText}" VerticalAlignment="Center" />
+                            <HyperlinkButton x:Name="PrivacyLink" Content="Privacy Policy" Style="{StaticResource UcLinkButton}" Click="OnPrivacy" />
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </ScrollViewer>
+    </Grid>
+</Page>

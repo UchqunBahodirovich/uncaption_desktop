@@ -1,0 +1,65 @@
+<ContentDialog
+    x:Class="Unicaption.App.Dialogs.LanguageDialog"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:Unicaption.App.Dialogs"
+    PrimaryButtonText="Confirm"
+    CloseButtonText="Cancel"
+    DefaultButton="Primary"
+    CornerRadius="18">
+
+    <!-- Language dialog 460 × 600 -->
+    <Grid Width="412" Height="480" RowSpacing="12">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Spacing="4">
+            <TextBlock x:Name="TitleText" Style="{StaticResource UcText}" FontSize="18" FontWeight="ExtraBold" />
+            <TextBlock Text="Choose the primary language" Style="{StaticResource UcSecondaryText}"
+                       Foreground="{ThemeResource UcTextMuted}" />
+        </StackPanel>
+
+        <Border Grid.Row="1" HorizontalAlignment="Left" CornerRadius="999" Padding="10,6"
+                Background="{ThemeResource UcBrandSurface}" BorderBrush="{ThemeResource UcBrandBorder}" BorderThickness="1">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <TextBlock x:Name="SelectedText" FontSize="13" FontWeight="SemiBold" Foreground="{ThemeResource UcBrand}" />
+                <Border CornerRadius="4" Padding="6,2" Background="{ThemeResource UcBrandSurface}">
+                    <TextBlock Text="PRIMARY" FontSize="10" FontWeight="ExtraBold" CharacterSpacing="50" Foreground="{ThemeResource UcBrand}" />
+                </Border>
+            </StackPanel>
+        </Border>
+
+        <TextBox x:Name="Search" Grid.Row="2" Style="{StaticResource UcTextBox}" PlaceholderText="Search languages..."
+                 TextChanged="OnSearchChanged" AutomationProperties.Name="Search languages" />
+
+        <TextBlock Grid.Row="3" Text="ALL LANGUAGES" Style="{StaticResource UcSectionLabel}" />
+
+        <ListView x:Name="LanguageList" Grid.Row="4" SelectionMode="Single" SelectionChanged="OnSelectionChanged"
+                  AutomationProperties.Name="Languages">
+            <ListView.ItemTemplate>
+                <DataTemplate x:DataType="local:LanguageItem">
+                    <Grid ColumnSpacing="12" Padding="0,6">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="32" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Border Width="32" Height="32" CornerRadius="6" Background="{ThemeResource UcSurfaceRaised}">
+                            <TextBlock Text="{x:Bind Badge}" FontSize="11" FontWeight="ExtraBold"
+                                       Foreground="{ThemeResource UcTextSecondary}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <TextBlock Grid.Column="1" Text="{x:Bind Name}" FontSize="14" FontWeight="Medium" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource UcTextPrimary}" />
+                        <TextBlock Grid.Column="2" Text="{x:Bind Code}" FontSize="12" VerticalAlignment="Center"
+                                   Foreground="{ThemeResource UcTextMuted}" />
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+        </ListView>
+    </Grid>
+</ContentDialog>

@@ -1,0 +1,75 @@
+<Page
+    x:Class="Unicaption.App.Views.BillingPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:controls="using:Unicaption.App.Controls"
+    Background="Transparent">
+
+    <Page.KeyboardAccelerators>
+        <KeyboardAccelerator Key="Escape" Invoked="OnEscape" />
+    </Page.KeyboardAccelerators>
+
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel MaxWidth="1200" Padding="24" Spacing="16">
+            <StackPanel Orientation="Horizontal" Spacing="8">
+                <Button Style="{StaticResource UcIconButton}" Content="&#xE72B;" Click="OnBack"
+                        ToolTipService.ToolTip="Back" AutomationProperties.Name="Back" />
+                <TextBlock Text="Billing &amp; Plans" Style="{StaticResource UcPageTitle}" VerticalAlignment="Center" />
+            </StackPanel>
+
+            <InfoBar x:Name="MessageBar" IsOpen="False" />
+
+            <Border Style="{StaticResource UcCard}">
+                <Grid ColumnSpacing="16">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="4">
+                        <TextBlock Text="CURRENT PLAN" Style="{StaticResource UcSectionLabel}" />
+                        <TextBlock x:Name="PlanName" Style="{StaticResource UcText}" FontSize="24" FontWeight="ExtraBold" />
+                        <TextBlock x:Name="PlanUsage" Style="{StaticResource UcSecondaryText}" />
+                        <TextBlock x:Name="PlanExpiry" Style="{StaticResource UcMutedText}" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                        <Border x:Name="ActiveBadge" CornerRadius="10" Padding="8,3" Background="{ThemeResource UcSuccessSurface}" Visibility="Collapsed">
+                            <TextBlock Text="Active" FontSize="11" FontWeight="Bold" Foreground="{ThemeResource UcSuccess}" />
+                        </Border>
+                        <ProgressRing x:Name="CancelProgress" IsActive="False" Width="20" Height="20" />
+                        <Button x:Name="CancelButton" Content="Cancel subscription" Style="{StaticResource UcSecondaryButton}"
+                                Visibility="Collapsed" Click="OnCancelSubscription" />
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <Border x:Name="OnDemandCard" Style="{StaticResource UcCard}" Visibility="Collapsed">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="ON-DEMAND BALANCE" Style="{StaticResource UcSectionLabel}" />
+                    <TextBlock x:Name="OnDemandBalance" Style="{StaticResource UcText}" FontSize="22" FontWeight="ExtraBold" />
+                    <TextBlock x:Name="OnDemandDetail" Style="{StaticResource UcSecondaryText}" />
+                </StackPanel>
+            </Border>
+
+            <StackPanel Spacing="6" Margin="0,8,0,0">
+                <TextBlock Text="Start free. Upgrade when ready." Style="{StaticResource UcPageTitle}" FontSize="20" />
+                <TextBlock Style="{StaticResource UcSecondaryText}"
+                           Text="Prices are shown for reference. The total amount and billing period are confirmed by the server at checkout." />
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" Spacing="10">
+                <TextBlock Text="Monthly" Style="{StaticResource UcText}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <ToggleSwitch x:Name="AnnualSwitch" OnContent="" OffContent="" MinWidth="0" Toggled="OnPeriodToggled"
+                              AutomationProperties.Name="Annual billing" />
+                <TextBlock Text="Annual" Style="{StaticResource UcText}" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <Border Style="{StaticResource UcBadge}" Background="{ThemeResource UcSuccessSurface}">
+                    <TextBlock Text="Save up to 22%" FontSize="11" FontWeight="Bold" Foreground="{ThemeResource UcSuccess}" />
+                </Border>
+            </StackPanel>
+
+            <controls:ResponsiveGrid x:Name="PlanCards" />
+
+            <TextBlock x:Name="CheckoutNote" Style="{StaticResource UcMutedText}" TextAlignment="Center" Margin="0,8,0,0"
+                       Text="Plan changes and top-ups will open in your browser once checkout is enabled for the desktop app." />
+        </StackPanel>
+    </ScrollViewer>
+</Page>

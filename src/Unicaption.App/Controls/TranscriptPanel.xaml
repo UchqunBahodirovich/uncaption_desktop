@@ -1,0 +1,82 @@
+<UserControl
+    x:Class="Unicaption.App.Controls.TranscriptPanel"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <Border x:Name="Card" Style="{StaticResource UcPanel}">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="48" />
+                <RowDefinition Height="*" />
+            </Grid.RowDefinitions>
+
+            <!-- Header: height 48, horizontal padding 16, bottom border -->
+            <Border BorderBrush="{ThemeResource UcBorderSubtle}" BorderThickness="0,0,0,1" Padding="16,0">
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+
+                    <Button x:Name="LeadLanguagePill" Style="{StaticResource UcLanguagePill}" Click="OnLanguageClick" />
+                    <TextBlock x:Name="TitleText" Grid.Column="1" Style="{StaticResource UcPanelTitle}" />
+
+                    <!-- LIVE badge: pill, padding 10/5, dot 8, 12/800 -->
+                    <Border x:Name="LiveBadge" Grid.Column="3" Visibility="Collapsed" CornerRadius="999" Padding="10,5"
+                            Background="{ThemeResource UcSuccessSurface}" VerticalAlignment="Center"
+                            AutomationProperties.Name="Live">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <Ellipse Width="8" Height="8" Fill="{ThemeResource UcSuccess}" VerticalAlignment="Center" />
+                            <TextBlock x:Name="LiveText" Text="LIVE 00:00" FontSize="12" FontWeight="ExtraBold"
+                                       Foreground="{ThemeResource UcSuccess}" FontFamily="{StaticResource UcFont}" />
+                        </StackPanel>
+                    </Border>
+
+                    <StackPanel x:Name="SourceActions" Grid.Column="4" Orientation="Horizontal" Spacing="2" Visibility="Collapsed">
+                        <Button x:Name="DirectionButton" Style="{StaticResource UcIconButton}" Content="&#xE8AB;"
+                                Foreground="{ThemeResource UcBrand}" Click="OnDirectionClick"
+                                ToolTipService.ToolTip="Switch text direction"
+                                AutomationProperties.Name="Switch text direction" />
+                        <Button Style="{StaticResource UcIconButton}" Content="&#xE74D;" Click="OnClearClick"
+                                ToolTipService.ToolTip="Clear transcription"
+                                AutomationProperties.Name="Clear transcription" />
+                    </StackPanel>
+
+                    <Button x:Name="TrailLanguagePill" Grid.Column="5" Style="{StaticResource UcLanguagePill}"
+                            Click="OnLanguageClick" Visibility="Collapsed" />
+                </Grid>
+            </Border>
+
+            <!-- Body: padding 20 -->
+            <Grid Grid.Row="1">
+                <ScrollViewer x:Name="Scroller" VerticalScrollBarVisibility="Auto" HorizontalScrollMode="Disabled"
+                              ViewChanged="OnViewChanged">
+                    <StackPanel x:Name="SegmentsHost" Padding="20" />
+                </ScrollViewer>
+
+                <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="4">
+                    <FontIcon x:Name="EmptyIcon" FontFamily="{StaticResource UcIcons}" FontSize="32"
+                              Foreground="{ThemeResource UcBorderSubtle}" Margin="0,0,0,8" />
+                    <TextBlock Text="Start your session to begin" Style="{StaticResource UcText}" FontWeight="Bold"
+                               Foreground="{ThemeResource UcTextMuted}" HorizontalAlignment="Center" />
+                    <TextBlock x:Name="EmptySubtitle" Style="{StaticResource UcSecondaryText}"
+                               Foreground="{ThemeResource UcTextMuted}" HorizontalAlignment="Center" />
+                </StackPanel>
+
+                <!-- TEXT 04: when the reader scrolled up, follow mode pauses; this returns to new text. -->
+                <Button x:Name="JumpButton" Visibility="Collapsed" Style="{StaticResource UcPrimaryButton}"
+                        CornerRadius="999" MinHeight="32" HorizontalAlignment="Center" VerticalAlignment="Bottom"
+                        Margin="0,0,0,12" Click="OnJumpClick" AutomationProperties.Name="Jump to latest">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <FontIcon Glyph="&#xE74B;" FontFamily="{StaticResource UcIcons}" FontSize="12" />
+                        <TextBlock Text="Latest" />
+                    </StackPanel>
+                </Button>
+            </Grid>
+        </Grid>
+    </Border>
+</UserControl>

@@ -1,0 +1,8 @@
+bin/
+obj/
+artifacts/
+installer/Output/
+*.user
+.vs/
+src/Unicaption.App/unicaption.config.json
+.DS_Store

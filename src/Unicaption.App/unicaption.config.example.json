@@ -1,0 +1,25 @@
+{
+  // Copy to unicaption.config.json (same folder) before building, or place next to Unicaption.exe.
+  // Only PUBLIC client identifiers belong here. Never put server, payment or service-account secrets here.
+
+  // Google OAuth client of type "Desktop app" (Google Cloud Console → Credentials).
+  // Loopback redirect http://127.0.0.1:<random port>/ is used automatically (RFC 8252).
+  "GoogleDesktopClientId": "",
+  // Google issues a non-confidential secret for Desktop clients; set it only if the token exchange requires it.
+  "GoogleDesktopClientSecret": "",
+
+  // Optional: a Windows-specific Firebase Web API key (defaults to the key the current desktop app uses).
+  // "FirebaseApiKey": "",
+
+  // External links: leave empty to hide the action in the UI.
+  "TermsUrl": "",
+  "PrivacyUrl": "",
+  "BookCallUrl": "",
+  "WhatsAppUrl": "",
+  "SupportEmail": "support@unicaption.com",
+
+  // Release channel overrides (staging etc.)
+  // "ApiBaseUrl": "https://soniox-backend-216350809512.us-central1.run.app",
+  // "WsUrl": "wss://soniox-backend-216350809512.us-central1.run.app/ws/transcribe/",
+  // "UpdateManifestUrl": "https://unicaption.com/instals/latest.json"
+}

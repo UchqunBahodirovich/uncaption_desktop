@@ -1,0 +1,279 @@
+<ResourceDictionary
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!-- ═══ Buttons ════════════════════════════════════════════════════════════
+         Every clickable element has default / hover / pressed / focused / disabled
+         states (UI 04). Focus uses the system focus ring (always visible on keyboard). -->
+
+    <ControlTemplate x:Key="UcOverlayButtonTemplate" TargetType="Button">
+        <Grid x:Name="Root"
+              Background="{TemplateBinding Background}"
+              BorderBrush="{TemplateBinding BorderBrush}"
+              BorderThickness="{TemplateBinding BorderThickness}"
+              CornerRadius="{TemplateBinding CornerRadius}">
+            <Border x:Name="Overlay" Background="{ThemeResource UcTextPrimary}" Opacity="0"
+                    CornerRadius="{TemplateBinding CornerRadius}" />
+            <ContentPresenter x:Name="Presenter"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              Padding="{TemplateBinding Padding}"
+                              Foreground="{TemplateBinding Foreground}"
+                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal" />
+                    <VisualState x:Name="PointerOver">
+                        <VisualState.Setters>
+                            <Setter Target="Overlay.Opacity" Value="0.06" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                            <Setter Target="Overlay.Opacity" Value="0.12" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Disabled">
+                        <VisualState.Setters>
+                            <Setter Target="Root.Background" Value="{ThemeResource UcSurfaceRaised}" />
+                            <Setter Target="Presenter.Foreground" Value="{ThemeResource UcTextMuted}" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+        </Grid>
+    </ControlTemplate>
+
+    <ControlTemplate x:Key="UcBrandButtonTemplate" TargetType="Button">
+        <Grid x:Name="Root"
+              Background="{TemplateBinding Background}"
+              BorderBrush="{TemplateBinding BorderBrush}"
+              BorderThickness="{TemplateBinding BorderThickness}"
+              CornerRadius="{TemplateBinding CornerRadius}">
+            <ContentPresenter x:Name="Presenter"
+                              Content="{TemplateBinding Content}"
+                              ContentTemplate="{TemplateBinding ContentTemplate}"
+                              Padding="{TemplateBinding Padding}"
+                              Foreground="{TemplateBinding Foreground}"
+                              HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                              VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}" />
+            <VisualStateManager.VisualStateGroups>
+                <VisualStateGroup x:Name="CommonStates">
+                    <VisualState x:Name="Normal" />
+                    <VisualState x:Name="PointerOver">
+                        <VisualState.Setters>
+                            <Setter Target="Root.Background" Value="{ThemeResource UcBrandHover}" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Pressed">
+                        <VisualState.Setters>
+                            <Setter Target="Root.Background" Value="{ThemeResource UcBrandHover}" />
+                            <Setter Target="Root.Opacity" Value="0.9" />
+                        </VisualState.Setters>
+                    </VisualState>
+                    <VisualState x:Name="Disabled">
+                        <VisualState.Setters>
+                            <Setter Target="Root.Background" Value="{ThemeResource UcSurfaceRaised}" />
+                            <Setter Target="Presenter.Foreground" Value="{ThemeResource UcTextMuted}" />
+                        </VisualState.Setters>
+                    </VisualState>
+                </VisualStateGroup>
+            </VisualStateManager.VisualStateGroups>
+        </Grid>
+    </ControlTemplate>
+
+    <Style x:Key="UcButtonBase" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{ThemeResource UcTextPrimary}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="FontFamily" Value="{StaticResource UcFont}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="HorizontalContentAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="UseSystemFocusVisuals" Value="True" />
+        <Setter Property="FocusVisualMargin" Value="-2" />
+        <Setter Property="Template" Value="{StaticResource UcOverlayButtonTemplate}" />
+    </Style>
+
+    <!-- AppButton: min height 40, radius 8, padding 14, 13/600 -->
+    <Style x:Key="UcPrimaryButton" TargetType="Button" BasedOn="{StaticResource UcButtonBase}">
+        <Setter Property="Background" Value="{ThemeResource UcBrand}" />
+        <Setter Property="Foreground" Value="{ThemeResource UcOnBrand}" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Template" Value="{StaticResource UcBrandButtonTemplate}" />
+    </Style>
+
+    <Style x:Key="UcSecondaryButton" TargetType="Button" BasedOn="{StaticResource UcButtonBase}">
+        <Setter Property="Background" Value="{ThemeResource UcSurfaceSubtle}" />
+        <Setter Property="Foreground" Value="{ThemeResource UcTextSecondary}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource UcBorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="MinHeight" Value="40" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <Style x:Key="UcDangerButton" TargetType="Button" BasedOn="{StaticResource UcPrimaryButton}">
+        <Setter Property="Background" Value="{ThemeResource UcError}" />
+    </Style>
+
+    <!-- Start / Stop: pill, padding 32×13, 15/700 -->
+    <Style x:Key="UcPillButton" TargetType="Button" BasedOn="{StaticResource UcPrimaryButton}">
+        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="Padding" Value="32,13" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontWeight" Value="Bold" />
+        <Setter Property="MinWidth" Value="140" />
+    </Style>
+
+    <!-- 28×28 visual icon buttons get a 32×32 hit area (UI 05). Tooltip + AutomationName set per use. -->
+    <Style x:Key="UcIconButton" TargetType="Button" BasedOn="{StaticResource UcButtonBase}">
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Foreground" Value="{ThemeResource UcTextMuted}" />
+        <Setter Property="FontFamily" Value="{StaticResource UcIcons}" />
+        <Setter Property="FontSize" Value="16" />
+    </Style>
+
+    <!-- Sidebar nav item: radius 10, vertical padding 11 -->
+    <Style x:Key="UcNavButton" TargetType="Button" BasedOn="{StaticResource UcButtonBase}">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+        <Setter Property="Padding" Value="12,11" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Margin" Value="0,0,0,2" />
+    </Style>
+
+    <!-- Language pill: height 32, radius 8, padding 10, 13/600 -->
+    <Style x:Key="UcLanguagePill" TargetType="Button" BasedOn="{StaticResource UcButtonBase}">
+        <Setter Property="Height" Value="32" />
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="Background" Value="{ThemeResource UcSurfaceSubtle}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource UcBorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+    </Style>
+
+    <!-- List row inside popups (model / domain / text size / languages) -->
+    <Style x:Key="UcRowButton" TargetType="Button" BasedOn="{StaticResource UcButtonBase}">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="Padding" Value="12,10" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Margin" Value="0,0,0,2" />
+    </Style>
+
+    <Style x:Key="UcChipButton" TargetType="Button" BasedOn="{StaticResource UcButtonBase}">
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="Background" Value="{ThemeResource UcSurfaceCard}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource UcBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+    </Style>
+
+    <Style x:Key="UcLinkButton" TargetType="HyperlinkButton">
+        <Setter Property="Foreground" Value="{ThemeResource UcTextSecondary}" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <!-- ═══ Surfaces ══════════════════════════════════════════════════════════ -->
+
+    <!-- Panel: radius 16, border 1 (shadow applied via ThemeShadow in code) -->
+    <Style x:Key="UcPanel" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource UcSurfaceCard}" />
+        <Setter Property="BorderBrush" Value="{ThemeResource UcBorderSubtle}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="16" />
+    </Style>
+
+    <Style x:Key="UcCard" TargetType="Border" BasedOn="{StaticResource UcPanel}">
+        <Setter Property="Padding" Value="20" />
+    </Style>
+
+    <Style x:Key="UcBadge" TargetType="Border">
+        <Setter Property="Background" Value="{ThemeResource UcBrandSurface}" />
+        <Setter Property="CornerRadius" Value="999" />
+        <Setter Property="Padding" Value="8,2" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- ═══ Text ══════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="UcText" TargetType="TextBlock">
+        <Setter Property="FontFamily" Value="{StaticResource UcFont}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Foreground" Value="{ThemeResource UcTextPrimary}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <Style x:Key="UcSecondaryText" TargetType="TextBlock" BasedOn="{StaticResource UcText}">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{ThemeResource UcTextSecondary}" />
+    </Style>
+
+    <Style x:Key="UcMutedText" TargetType="TextBlock" BasedOn="{StaticResource UcText}">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{ThemeResource UcTextMuted}" />
+    </Style>
+
+    <!-- Section label 11/800, letter spacing 0.8 -->
+    <Style x:Key="UcSectionLabel" TargetType="TextBlock" BasedOn="{StaticResource UcText}">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+        <Setter Property="CharacterSpacing" Value="73" />
+        <Setter Property="Foreground" Value="{ThemeResource UcTextMuted}" />
+    </Style>
+
+    <Style x:Key="UcPanelTitle" TargetType="TextBlock" BasedOn="{StaticResource UcText}">
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{ThemeResource UcTextSecondary}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="UcDialogTitle" TargetType="TextBlock" BasedOn="{StaticResource UcText}">
+        <Setter Property="FontSize" Value="20" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+    </Style>
+
+    <Style x:Key="UcPageTitle" TargetType="TextBlock" BasedOn="{StaticResource UcText}">
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontWeight" Value="ExtraBold" />
+    </Style>
+
+    <!-- Sidebar label 14/500 -->
+    <Style x:Key="UcNavLabel" TargetType="TextBlock" BasedOn="{StaticResource UcText}">
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <Style x:Key="UcIcon" TargetType="FontIcon">
+        <Setter Property="FontFamily" Value="{StaticResource UcIcons}" />
+        <Setter Property="FontSize" Value="19" />
+        <Setter Property="Foreground" Value="{ThemeResource UcTextSecondary}" />
+    </Style>
+
+    <!-- ═══ Inputs ════════════════════════════════════════════════════════════ -->
+
+    <Style x:Key="UcTextBox" TargetType="TextBox">
+        <Setter Property="FontFamily" Value="{StaticResource UcFont}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="14,10" />
+    </Style>
+
+</ResourceDictionary>
