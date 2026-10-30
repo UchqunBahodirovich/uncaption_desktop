@@ -38,6 +38,13 @@ UninstallDisplayIcon={app}\{#MyAppExeName}
 Compression=lzma2/max
 SolidCompression=yes
 WizardStyle=modern
+; Brand panel on the Welcome / Finish pages and the header logo, one file per DPI step
+; (100-250 %) so they stay sharp; regenerate with branding\make_branding.ps1.
+WizardImageFile=branding\WizardImage-100.bmp,branding\WizardImage-125.bmp,branding\WizardImage-150.bmp,branding\WizardImage-175.bmp,branding\WizardImage-200.bmp,branding\WizardImage-225.bmp,branding\WizardImage-250.bmp
+WizardSmallImageFile=branding\WizardSmallImage-100.bmp,branding\WizardSmallImage-125.bmp,branding\WizardSmallImage-150.bmp,branding\WizardSmallImage-175.bmp,branding\WizardSmallImage-200.bmp,branding\WizardSmallImage-225.bmp,branding\WizardSmallImage-250.bmp
+WizardImageStretch=no
+; Inno 6 hides the Welcome page by default; the brand flow starts with it.
+DisableWelcomePage=no
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.17763
@@ -48,6 +55,13 @@ VersionInfoVersion={#MyAppVersion}
 [Languages]
 Name: "english"; MessagesFile: "compiler:Default.isl"
 Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
+
+[Messages]
+english.WelcomeLabel1=Welcome to Unicaption Setup
+english.WelcomeLabel2=Unicaption shows live captions and translation for your microphone and computer audio.%n%nThis will install [name/ver] on your computer. Close other applications before continuing.
+english.InstallingLabel=Installing Unicaption...
+english.FinishedHeadingLabel=Unicaption has been installed
+english.FinishedLabel=Unicaption is ready. Sign in with Google when it opens to start captioning.
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
