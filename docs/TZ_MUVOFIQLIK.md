@@ -38,7 +38,7 @@ Belgilar: **✅ bajarildi** · **🧪 unit-test bilan tasdiqlangan** · **🪟 W
 | TEXT 03 RTL to‘plami, yon chiziq o‘ngga, chap panelda manual toggle, Clear faqat chap panel | ✅ 🧪 🪟 | `TranscriptPanel` |
 | TEXT 04 Matnni belgilash/copy, auto-scroll + «Latest» tugmasi | ✅ 🪟 | `TranscriptPanel` |
 | WS 01 Bitta til, qidiruv, Confirm’da qo‘llanadi, target sarlavhasi «Select Translation Language» | ✅ | `Dialogs/LanguageDialog` |
-| WS 02 Model/soha | ✅ / ⏸ | Domain: hammasi tanlanadi, Soniox’ga `context.general` orqali yuboriladi. Model: consumer `model`ni o‘qimaydi (doim `stt-rt-v4`), shuning uchun faqat Apex Gen-1 |
+| WS 02 Model/soha | ✅ / ⏸ | Domain: hammasi tanlanadi, Soniox’ga `context.general` orqali yuboriladi. Model: hamma Apex modellari tanlanadi (mahsulot qarori); consumer `model`ni o‘qimaydi, hozircha hammasi `stt-rt-v4` |
 | WS 03 Context Save/Cancel ajratilgan, qayta ochilganda ko‘rinadi | ✅ | `Dialogs/ContextDialog` (lokal saqlanadi) |
 | WS 03 Context’ni backend’ga uzatish, Community | ✅ / ➖ | Custom Context `context.terms` sifatida yuboriladi (jonli servisda tekshirilgan); translation prompt lokal; Community MVP’dan chiqarilgan |
 | WS 04 Notes: copy/clear/close/drag/resize, 220–600 × 200–700, oynadan chiqmaydi, run davomida saqlanadi | ✅ 🪟 | `Controls/NotesPanel` |

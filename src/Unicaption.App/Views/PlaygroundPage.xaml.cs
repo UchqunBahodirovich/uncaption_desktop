@@ -152,7 +152,7 @@ public sealed partial class PlaygroundPage : Page
     private void RenderSettings()
     {
         // Model / Domain nav items wear the icon of the item picked in their menu.
-        SetNavGlyph(ModelNav, ModelGlyphs[_modelIndex % ModelGlyphs.Length]);
+        SetNavGlyph(ModelNav, ModelGlyphs[ModelIndex % ModelGlyphs.Length]);
         SetNavGlyph(DomainNav, DomainGlyphs[DomainIndex % DomainGlyphs.Length]);
 
         var st = _s.Settings;
@@ -416,9 +416,10 @@ public sealed partial class PlaygroundPage : Page
     }
 
     private static readonly string[] ModelGlyphs = ["", "", ""];
-    // The consumer always runs stt-rt-v4 and ignores "model", so only Apex Gen-1 is offered.
-    // The domain is real: it is sent to Soniox as context. The sidebar icons follow both.
-    private readonly int _modelIndex = 0;
+    // Product decision: every Apex model is selectable. The consumer currently runs stt-rt-v4
+    // for all of them (it ignores "model"); the domain is sent to Soniox as context.
+    // The sidebar icons follow both selections.
+    private int ModelIndex => Math.Max(0, Catalogs.Models.ToList().FindIndex(m => m.Name == _s.Settings.Model));
 
     private int DomainIndex => Math.Max(0, Catalogs.Domains.ToList().FindIndex(d => d.Name == _s.Settings.Domain));
 
@@ -426,10 +427,18 @@ public sealed partial class PlaygroundPage : Page
 
     private void OnModel(object sender, RoutedEventArgs e)
     {
-        // WS 02: Apex names are not mapped to server models yet; only the active model is selectable.
+        if (_s.Session.IsBusy) return; // the model is part of the session config
+        Flyout? flyout = null;
+        var current = ModelIndex;
         var cards = Catalogs.Models.Select((m, i) => OptionCard(ModelGlyphs[i % ModelGlyphs.Length], m.Name, m.Subtitle,
-            TierLabel(m.Tier), selected: i == _modelIndex, available: i == _modelIndex));
-        ShowPopup((Button)sender, "Model", "Only Apex Gen-1 is available right now.", OptionList(cards));
+            TierLabel(m.Tier), selected: i == current, available: true, onClick: () =>
+            {
+                _s.Settings.Model = m.Name;
+                _s.Settings.Save();
+                RenderSettings();
+                flyout?.Hide();
+            }));
+        flyout = ShowPopup((Button)sender, "Model", "Applies from the next session.", OptionList(cards));
     }
 
     private void OnDomain(object sender, RoutedEventArgs e)

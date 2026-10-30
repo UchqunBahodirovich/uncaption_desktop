@@ -18,6 +18,9 @@ public sealed class WorkspaceSettings
 
     /// <summary>Domain name from the catalog; sent to Soniox as context ("General" = none).</summary>
     public string Domain { get; set; } = "General";
+
+    /// <summary>Apex model name from the catalog (UI label; the server model id comes from AppConfig).</summary>
+    public string Model { get; set; } = "Apex Gen-1";
     public double TextScale { get; set; } = 1.0;
     public bool SidebarExpanded { get; set; } = true;
     public int AudioSource { get; set; }
@@ -75,6 +78,7 @@ public sealed class WorkspaceSettings
         if (string.IsNullOrWhiteSpace(SourceLanguage)) SourceLanguage = "en";
         if (string.IsNullOrWhiteSpace(TargetLanguage)) TargetLanguage = "ru";
         if (string.IsNullOrWhiteSpace(Domain)) Domain = "General";
+        if (string.IsNullOrWhiteSpace(Model)) Model = "Apex Gen-1";
         SourceLanguageHints = (SourceLanguageHints ?? [])
             .Where(h => !string.IsNullOrWhiteSpace(h) && h != SourceLanguage)
             .Distinct()
