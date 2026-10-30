@@ -62,7 +62,7 @@ public sealed class ClientWsConnection : IWsConnection
     }
 }
 
-public enum RealtimeCloseReason { Normal, ServerClosed, Error, AuthTimeout, AuthRejected }
+public enum RealtimeCloseReason { Normal, ServerClosed, Error, AuthTimeout, AuthRejected, ServiceError }
 
 public sealed class RealtimeClosedEventArgs(RealtimeCloseReason reason, Exception? error) : EventArgs
 {
@@ -233,7 +233,7 @@ public sealed class RealtimeClient : IAsyncDisposable
         // {"error":"…"} (no "type"); "type" is still accepted for the documented RT 01 shape.
         var kind = RealtimeConfig.TypeOf(msg)
                    ?? JsonNormalizer.OptionalString(msg, "status")
-                   ?? (msg.ContainsKey("error") ? "error" : null);
+                   ?? (msg.ContainsKey("error") || msg.ContainsKey("error_code") ? "error" : null);
         switch (kind)
         {
             case "authenticated":
@@ -256,10 +256,14 @@ public sealed class RealtimeClient : IAsyncDisposable
                 }
                 return;
             case "error":
-                var err = new RealtimeException(RealtimeCloseReason.Error, "The transcription service reported an error.");
                 if (_authenticated.TrySetException(new RealtimeException(RealtimeCloseReason.AuthRejected,
                         "The transcription service rejected the session."))) return;
-                RaiseClosed(RealtimeCloseReason.Error, err);
+                // After auth the errors come from Soniox ({"error_code":400,"error_message":"Invalid
+                // language hint."}); keep its short message so the user learns what to change.
+                var detail = JsonNormalizer.OptionalString(msg, "error_message", "error", "message");
+                _diag.Warn("ws.service_error", ("code", JsonNormalizer.OptionalString(msg, "error_code") ?? ""));
+                RaiseClosed(RealtimeCloseReason.ServiceError,
+                    new RealtimeException(RealtimeCloseReason.ServiceError, detail ?? "The transcription service reported an error."));
                 return;
         }
 

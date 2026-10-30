@@ -104,6 +104,17 @@ public class SessionControllerTests
         Assert.True(DateTime.UtcNow - started < TimeSpan.FromSeconds(5));
     }
 
+    [Fact] // Soniox rejects the config ({"error_code":400,...}) while capture is still starting
+    public async Task ServiceErrorBeforeLive_IsShownWithItsMessage()
+    {
+        var rig = new Rig();
+        rig.Audio.OnStart = () => rig.Sockets[0].Push("{\"error_code\": 400, \"error_message\": \"Invalid language hint.\"}");
+        await rig.Controller.StartAsync(Rig.Options);
+        await WaitUntil(() => rig.Controller.State == SessionState.Error);
+        Assert.Contains("Invalid language hint.", rig.Controller.LastError!.Message);
+        Assert.Equal(1, rig.Audio.Stops);
+    }
+
     [Fact] // AC 13 + TIME 01
     public async Task RepeatedStop_OneCleanup_OneUsage_SnapshotSeconds()
     {

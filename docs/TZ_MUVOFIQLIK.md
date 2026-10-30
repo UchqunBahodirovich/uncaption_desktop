@@ -38,9 +38,9 @@ Belgilar: **✅ bajarildi** · **🧪 unit-test bilan tasdiqlangan** · **🪟 W
 | TEXT 03 RTL to‘plami, yon chiziq o‘ngga, chap panelda manual toggle, Clear faqat chap panel | ✅ 🧪 🪟 | `TranscriptPanel` |
 | TEXT 04 Matnni belgilash/copy, auto-scroll + «Latest» tugmasi | ✅ 🪟 | `TranscriptPanel` |
 | WS 01 Bitta til, qidiruv, Confirm’da qo‘llanadi, target sarlavhasi «Select Translation Language» | ✅ | `Dialogs/LanguageDialog` |
-| WS 02 Model/soha | ⏸ | Faqat amaldagi model tanlangan; boshqalari «Coming soon», faol AI farqi sifatida ko‘rsatilmaydi |
+| WS 02 Model/soha | ✅ / ⏸ | Domain: hammasi tanlanadi, Soniox’ga `context.general` orqali yuboriladi. Model: consumer `model`ni o‘qimaydi (doim `stt-rt-v4`), shuning uchun faqat Apex Gen-1 |
 | WS 03 Context Save/Cancel ajratilgan, qayta ochilganda ko‘rinadi | ✅ | `Dialogs/ContextDialog` (lokal saqlanadi) |
-| WS 03 Context’ni backend’ga uzatish, Community | ⏸ | Shartnoma yo‘q → yuborilmaydi; Community MVP’dan chiqarilgan |
+| WS 03 Context’ni backend’ga uzatish, Community | ✅ / ➖ | Custom Context `context.terms` sifatida yuboriladi (jonli servisda tekshirilgan); translation prompt lokal; Community MVP’dan chiqarilgan |
 | WS 04 Notes: copy/clear/close/drag/resize, 220–600 × 200–700, oynadan chiqmaydi, run davomida saqlanadi | ✅ 🪟 | `Controls/NotesPanel` |
 | WS 05 Dictionary: translate endpoint, Enter yoki 300 ms debounce, loading/result/empty/error/retry, eski javob inkor | ✅ 🪟 | `Controls/DictionaryPanel` |
 | WS 05 Support: faqat haqiqiy manzillar; Start Tour (onboarding qayta ochiladi); diagnostika nusxasi | ✅ | `Dialogs/SupportDialog`, `Controls/OnboardingTour` |
@@ -95,7 +95,8 @@ Belgilar: **✅ bajarildi** · **🧪 unit-test bilan tasdiqlangan** · **🪟 W
 1. **Auth** — Google «Desktop app» client ID (docs/SETUP.md). Usiz login ishlamaydi.
 2. **Backend** — PCM formatini config’da e’lon qilish kerakmi; partial token semantikasi; finish/session ID/usage idempotency.
 3. **Tariflar** — `price_id`, haqiqiy narxlar, trial va entitlement mapping (hozirgi narxlar statik va «reference» deb belgilangan).
-4. **Model/Domain** — server model identifikatorlari va ruxsatlari.
+4. **Model** — consumer `model` maydonini o‘qimaydi; Apex Gen-2/2.5 uchun server tomonda tanlov kerak.
+6. **Audio format** — consumer Soniox’ga `audio_format: auto` yuboradi, u sarlavhasiz PCM’ni tanimaydi. `customers.py`da klient yuborgan `pcm_s16le`/`sample_rate`/`num_channels`ni hurmat qilish kerak (patch tayyor, deploy qilinishi shart).
 5. **Context** — prompt/domain transporti va saqlash scope’i.
 6. **Tashqi havolalar** — Terms, Privacy, Calendly, WhatsApp URL’lari (berilsa konfiguratsiyaga yoziladi).
 7. **Code signing** — sertifikat va imzolash siyosati (`build_installer.ps1` tayyor).

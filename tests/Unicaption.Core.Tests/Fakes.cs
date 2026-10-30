@@ -44,6 +44,7 @@ internal sealed class FakeAudio : IAudioEngine
     public int Starts;
     public int Stops;
     public PcmSink? Sink;
+    public Action? OnStart;
 
     public event EventHandler<AudioCaptureException>? Failed;
 
@@ -54,6 +55,7 @@ internal sealed class FakeAudio : IAudioEngine
     {
         Starts++;
         Sink = sink;
+        OnStart?.Invoke();
         return Task.CompletedTask;
     }
 

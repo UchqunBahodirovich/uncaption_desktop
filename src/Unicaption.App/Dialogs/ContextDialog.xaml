@@ -43,7 +43,7 @@
 
             <Border CornerRadius="8" Padding="12,8" Margin="0,6,0,0" Background="{ThemeResource UcSurfaceSubtle}">
                 <TextBlock Style="{StaticResource UcMutedText}"
-                           Text="Saved on this device. Sending context and prompt to the transcription engine is enabled once the backend contract is confirmed." />
+                           Text="Custom Context terms and the domain are sent with every session. The translation prompt is saved on this device only." />
             </Border>
         </StackPanel>
     </ScrollViewer>

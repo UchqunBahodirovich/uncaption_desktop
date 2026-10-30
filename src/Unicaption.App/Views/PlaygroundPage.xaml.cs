@@ -153,7 +153,7 @@ public sealed partial class PlaygroundPage : Page
     {
         // Model / Domain nav items wear the icon of the item picked in their menu.
         SetNavGlyph(ModelNav, ModelGlyphs[_modelIndex % ModelGlyphs.Length]);
-        SetNavGlyph(DomainNav, DomainGlyphs[_domainIndex % DomainGlyphs.Length]);
+        SetNavGlyph(DomainNav, DomainGlyphs[DomainIndex % DomainGlyphs.Length]);
 
         var st = _s.Settings;
         var locked = _s.Session.IsBusy;
@@ -169,7 +169,7 @@ public sealed partial class PlaygroundPage : Page
         SetNavState(SystemNav, source == AudioSourceKind.System ? NavState.Filled : NavState.Normal);
         SetNavState(BothNav, source == AudioSourceKind.Both ? NavState.Filled : NavState.Normal);
         var activeSource = source switch { AudioSourceKind.System => SystemNav, AudioSourceKind.Both => BothNav, _ => MicNav };
-        foreach (var b in new[] { MicNav, SystemNav, BothNav, ModelNav })
+        foreach (var b in new[] { MicNav, SystemNav, BothNav, ModelNav, DomainNav })
         {
             // The source being captured stays fully visible while locked; it just ignores input.
             var keepVisible = locked && b == activeSource;
@@ -279,7 +279,8 @@ public sealed partial class PlaygroundPage : Page
         ErrorBar.IsOpen = false;
         return _s.Session.StartAsync(new SessionOptions(
             (AudioSourceKind)st.AudioSource,
-            new RealtimeConfig(_s.Config.RealtimeModel, st.SourceLanguage, st.TargetLanguage, st.SourceLanguageHints)));
+            new RealtimeConfig(_s.Config.RealtimeModel, st.SourceLanguage, st.TargetLanguage, st.SourceLanguageHints,
+                st.Domain, st.CustomContext.Split([',', ';', '\n'], StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries))));
     }
 
     private void OnErrorClosed(InfoBar sender, object args) => _s.Session.DismissError();
@@ -415,9 +416,11 @@ public sealed partial class PlaygroundPage : Page
     }
 
     private static readonly string[] ModelGlyphs = ["", "", ""];
-    // WS 02: only the first model / domain is selectable today; the sidebar icons follow these.
+    // The consumer always runs stt-rt-v4 and ignores "model", so only Apex Gen-1 is offered.
+    // The domain is real: it is sent to Soniox as context. The sidebar icons follow both.
     private readonly int _modelIndex = 0;
-    private readonly int _domainIndex = 0;
+
+    private int DomainIndex => Math.Max(0, Catalogs.Domains.ToList().FindIndex(d => d.Name == _s.Settings.Domain));
 
     private static readonly string[] DomainGlyphs = ["", "", "", "", "", ""];
 
@@ -431,10 +434,18 @@ public sealed partial class PlaygroundPage : Page
 
     private void OnDomain(object sender, RoutedEventArgs e)
     {
-        // WS 02: domain is not sent to the backend yet; shown as information, not as an active AI switch.
+        if (_s.Session.IsBusy) return; // the domain is part of the session config
+        Flyout? flyout = null;
+        var current = DomainIndex;
         var cards = Catalogs.Domains.Select((d, i) => OptionCard(DomainGlyphs[i % DomainGlyphs.Length], d.Name, d.Subtitle,
-            TierLabel(d.Tier), selected: i == _domainIndex, available: i == _domainIndex));
-        ShowPopup((Button)sender, "Domain", "Tunes vocabulary for your field. More domains are on the way.", OptionList(cards));
+            TierLabel(d.Tier), selected: i == current, available: true, onClick: () =>
+            {
+                _s.Settings.Domain = d.Name;
+                _s.Settings.Save();
+                RenderSettings();
+                flyout?.Hide();
+            }));
+        flyout = ShowPopup((Button)sender, "Domain", "Tunes recognition vocabulary for your field. Applies from the next session.", OptionList(cards));
     }
 
     // ═══ Account menu ════════════════════════════════════════════════════════
@@ -571,7 +582,7 @@ public sealed partial class PlaygroundPage : Page
     private async void OnContext(object sender, RoutedEventArgs e)
     {
         if (_dialogOpen) return;
-        await ShowDialogAsync(new ContextDialog(_s.Settings, Catalogs.Domains[_domainIndex].Name) { XamlRoot = XamlRoot });
+        await ShowDialogAsync(new ContextDialog(_s.Settings, Catalogs.Domains[DomainIndex].Name) { XamlRoot = XamlRoot });
     }
 
     private void OnNotes(object sender, RoutedEventArgs e)
@@ -689,7 +700,8 @@ public sealed partial class PlaygroundPage : Page
         return list;
     }
 
-    private UIElement OptionCard(string glyph, string title, string subtitle, string? badge, bool selected, bool available)
+    private UIElement OptionCard(string glyph, string title, string subtitle, string? badge, bool selected, bool available,
+        Action? onClick = null)
     {
         var tile = new Border
         {
@@ -759,6 +771,7 @@ public sealed partial class PlaygroundPage : Page
         };
         AutomationProperties.SetName(button, name);
         if (selected) AutomationProperties.SetItemStatus(button, "Selected");
+        if (onClick is not null) button.Click += (_, _) => onClick();
         return button;
     }
 

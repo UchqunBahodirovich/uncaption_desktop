@@ -64,6 +64,7 @@ public sealed class SessionController
     private RealtimeClient? _rt;
     private BoundedAudioQueue? _queue;
     private CancellationTokenSource? _startCts;
+    private RealtimeClosedEventArgs? _closedBeforeLive; // upstream may reject the config while capture starts
 
     public SessionController(
         IAudioEngine audio,
@@ -114,6 +115,7 @@ public sealed class SessionController
         _startCts = new CancellationTokenSource();
         var ct = _startCts.Token;
         LastError = null;
+        _closedBeforeLive = null;
         SetState(SessionState.RequestingPermission);
         _diag.Info("session.start", ("id", id.ToString()), ("source", options.Source.ToString()));
 
@@ -157,6 +159,7 @@ public sealed class SessionController
             Clock.Start();
             SetState(SessionState.Live);
             _diag.Info("session.live", ("id", id.ToString()));
+            if (_closedBeforeLive is { } early) OnRealtimeClosed(id, early);
         }
         catch (Exception e)
         {
@@ -258,8 +261,16 @@ public sealed class SessionController
     private void OnRealtimeClosed(int id, RealtimeClosedEventArgs e)
     {
         if (id != _sessionId) return;
-        if (State == SessionState.Live)
-            _ = StopCoreAsync(id, new(SessionErrorKind.ConnectionLost, "Connection to the transcription service was lost."));
+        if (State is SessionState.Connecting or SessionState.StartingCapture)
+        {
+            _closedBeforeLive = e;
+            return;
+        }
+        if (State != SessionState.Live) return;
+        var error = e.Error is RealtimeException { Reason: RealtimeCloseReason.ServiceError } service
+            ? new SessionError(SessionErrorKind.Unknown, $"The transcription service stopped the session: {service.Message}")
+            : new SessionError(SessionErrorKind.ConnectionLost, "Connection to the transcription service was lost.");
+        _ = StopCoreAsync(id, error);
     }
 
     private void OnOverflow(int id)

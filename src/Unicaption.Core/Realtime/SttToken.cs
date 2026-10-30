@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Unicaption.Core.Api;
+using Unicaption.Core.Audio;
 
 namespace Unicaption.Core.Realtime;
 
@@ -52,20 +53,28 @@ public static class TokenParser
 }
 
 /// <summary>
-/// Builds the config message from RT 01. Only fields the backend is known to accept;
-/// <c>language_hints</c> (primary first, then hints) is added only when the user picked hints,
-/// so the default message is unchanged.
+/// Builds the config message from RT 01, matched to the deployed consumer (customers.py):
+/// it reads <c>language</c> first and only falls back to <c>language_hints</c>, so with hints the
+/// list (primary first) is sent and <c>language</c> is left out. <c>context</c> is forwarded to
+/// Soniox unchanged: the domain goes in <c>general</c>, Custom Context in <c>terms</c> (both
+/// verified against the live service). The raw-PCM fields describe what the app streams; the
+/// consumer still sends <c>audio_format: auto</c> upstream until it honours them.
 /// </summary>
 public sealed record RealtimeConfig(string Model, string SourceLanguage, string TargetLanguage,
-    IReadOnlyList<string>? LanguageHints = null)
+    IReadOnlyList<string>? LanguageHints = null, string? Domain = null, IReadOnlyList<string>? ContextTerms = null)
 {
+    /// <summary>Catalog value meaning "no domain"; it is not sent.</summary>
+    public const string GeneralDomain = "General";
+
     public string ToJson()
     {
         var json = new JsonObject
         {
             ["type"] = "config",
             ["model"] = Model,
-            ["language"] = SourceLanguage,
+            ["audio_format"] = "pcm_s16le",
+            ["sample_rate"] = AudioFormat.SampleRate,
+            ["num_channels"] = AudioFormat.Channels,
             ["enable_speaker_diarization"] = true,
             ["enable_streaming_translation"] = true,
             ["translation"] = new JsonObject
@@ -81,6 +90,26 @@ public sealed record RealtimeConfig(string Model, string SourceLanguage, string 
             var array = new JsonArray { SourceLanguage };
             foreach (var h in hints) array.Add(h);
             json["language_hints"] = array;
+        }
+        else
+        {
+            json["language"] = SourceLanguage;
+        }
+
+        var terms = (ContextTerms ?? []).Select(t => t.Trim()).Where(t => t.Length > 0).Distinct().ToList();
+        var domain = string.IsNullOrWhiteSpace(Domain) || Domain == GeneralDomain ? null : Domain;
+        if (domain is not null || terms.Count > 0)
+        {
+            var context = new JsonObject();
+            if (domain is not null)
+                context["general"] = new JsonArray { new JsonObject { ["key"] = "domain", ["value"] = domain } };
+            if (terms.Count > 0)
+            {
+                var list = new JsonArray();
+                foreach (var t in terms) list.Add(t);
+                context["terms"] = list;
+            }
+            json["context"] = context;
         }
         return json.ToJsonString();
     }

@@ -81,7 +81,11 @@ public class TokenParserTests
         Assert.Equal("stt-rt-v3", (string?)json["model"]);
         Assert.Equal("two_way", (string?)json["translation"]!["type"]);
         Assert.Equal("ru", (string?)json["translation"]!["language_b"]);
-        Assert.Null(json["language_hints"]); // unchanged contract when no hints are chosen
+        Assert.Null(json["language_hints"]); // without hints the consumer gets "language"
+        Assert.Equal("en", (string?)json["language"]);
+        Assert.Equal("pcm_s16le", (string?)json["audio_format"]);
+        Assert.Equal(16000, (int)json["sample_rate"]!);
+        Assert.Null(json["context"]);
     }
 
     [Fact]
@@ -90,7 +94,20 @@ public class TokenParserTests
         var json = JsonNode.Parse(new RealtimeConfig("stt-rt-v3", "en", "ru", ["uz", "en", "uz", "ru"]).ToJson())!.AsObject();
         var hints = json["language_hints"]!.AsArray().Select(n => (string)n!).ToArray();
         Assert.Equal(["en", "uz", "ru"], hints);
-        Assert.Equal("en", (string?)json["language"]);
+        Assert.Null(json["language"]); // the consumer prefers "language" and would drop the hints
+    }
+
+    [Fact] // context shape accepted by Soniox through the consumer
+    public void Config_DomainAndTerms_GoToContext()
+    {
+        var json = JsonNode.Parse(new RealtimeConfig("stt-rt-v3", "en", "ru", null, "Healthcare", [" Cigna ", "", "Cigna", "CPR"]).ToJson())!.AsObject();
+        var context = json["context"]!.AsObject();
+        Assert.Equal("domain", (string?)context["general"]![0]!["key"]);
+        Assert.Equal("Healthcare", (string?)context["general"]![0]!["value"]);
+        Assert.Equal(["Cigna", "CPR"], context["terms"]!.AsArray().Select(n => (string)n!).ToArray());
+
+        var general = JsonNode.Parse(new RealtimeConfig("m", "en", "ru", null, RealtimeConfig.GeneralDomain).ToJson())!.AsObject();
+        Assert.Null(general["context"]);
     }
 }
 
