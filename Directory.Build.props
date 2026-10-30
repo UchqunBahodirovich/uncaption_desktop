@@ -1,7 +1,7 @@
 <Project>
   <!-- Single source of the release version (installer, manifest and AppConfig read it). -->
   <PropertyGroup>
-    <Version>0.3.1</Version>
+    <Version>2.0.0</Version>
     <Authors>Unicaption</Authors>
     <Copyright>© Unicaption</Copyright>
   </PropertyGroup>

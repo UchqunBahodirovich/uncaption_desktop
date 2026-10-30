@@ -41,5 +41,5 @@ public sealed record AppConfig
     /// <summary>Realtime model id. Apex names are UI labels, not server ids (RT 01).</summary>
     public string RealtimeModel { get; init; } = "stt-rt-v3";
 
-    public string AppVersion { get; init; } = "0.2.0";
+    public string AppVersion { get; init; } = "2.0.0";
 }

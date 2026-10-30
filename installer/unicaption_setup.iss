@@ -8,7 +8,7 @@
 
 #define MyAppName "Unicaption"
 #ifndef MyAppVersion
-  #define MyAppVersion "0.2.0"
+  #define MyAppVersion "2.0.0"
 #endif
 #ifndef PublishDir
   #define PublishDir "..\artifacts\publish\win-x64"
