@@ -35,7 +35,7 @@ Belgilar: **✅ bajarildi** · **🧪 unit-test bilan tasdiqlangan** · **🪟 W
 | AUDIO 04 Ruxsat/qurilma yo‘q/uzilish/default almashishi xabarlari; Live faqat birinchi buffer’dan keyin; queue 2 s chegarasi | ✅ 🧪 🪟 | `WasapiAudioEngine`, `BoundedAudioQueue` |
 | TEXT 01–02 Ikki panel, segment modeli, grouping qoidalari, 3000 ms monotonic, 50 segment | ✅ 🧪 | `Core/Transcript/TranscriptStore.cs` |
 | TEXT 02 Partial semantikasi | ⏸ | Hozirgi kod kabi «snapshot» deb olingan; real payload bilan tasdiqlash kerak |
-| TEXT 03 RTL to‘plami, yon chiziq o‘ngga, chap panelda manual toggle, Clear faqat chap panel | ✅ 🧪 🪟 | `TranscriptPanel` |
+| TEXT 03 RTL to‘plami, yon chiziq o‘ngga, RTL avtomatik; chap paneldagi strelka yangi matn tepada/pastda chiqishini almashtiradi; Clear ikkala panelni tozalaydi (mahsulot qarori) | ✅ 🧪 🪟 | `TranscriptPanel` |
 | TEXT 04 Matnni belgilash/copy, auto-scroll + «Latest» tugmasi | ✅ 🪟 | `TranscriptPanel` |
 | WS 01 Bitta til, qidiruv, Confirm’da qo‘llanadi, target sarlavhasi «Select Translation Language» | ✅ | `Dialogs/LanguageDialog` |
 | WS 02 Model/soha | ✅ / ⏸ | Domain: hammasi tanlanadi, Soniox’ga `context.general` orqali yuboriladi. Model: hamma Apex modellari tanlanadi (mahsulot qarori); consumer `model`ni o‘qimaydi, hozircha hammasi `stt-rt-v4` |

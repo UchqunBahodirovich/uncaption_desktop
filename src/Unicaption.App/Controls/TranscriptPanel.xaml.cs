@@ -36,19 +36,20 @@ public sealed partial class TranscriptPanel : UserControl
     private bool _isTranslation;
     private bool _followTail = true;
     private double _scale = 1;
-    private FlowDirection? _directionOverride;
+    private bool _newestFirst;
+    private List<Segment> _segments = [];
     private string _language = "en";
 
     public TranscriptPanel()
     {
         InitializeComponent();
         ActualThemeChanged += (_, _) => RebuildAll();
-        Motion.AttachShowHide(JumpButton, 0, 8); // rises from the bottom edge it is pinned to
+        ApplyOrder();
     }
 
     public event EventHandler? LanguageClicked;
     public event EventHandler? ClearClicked;
-    public event EventHandler? DirectionToggled;
+    public event EventHandler? OrderToggled;
 
     public void Configure(string title, bool isTranslation, string emptySubtitle, string emptyGlyph)
     {
@@ -81,15 +82,31 @@ public sealed partial class TranscriptPanel : UserControl
         LiveText.Text = "LIVE " + SessionClock.Format(seconds);
     }
 
-    /// <summary>Manual direction toggle for the source panel (TEXT 03); null = automatic by language.</summary>
-    public void SetDirectionOverride(FlowDirection? direction)
+    /// <summary>Where new segments appear: at the bottom (default, chat order) or at the top.</summary>
+    public void SetNewestFirst(bool newestFirst)
     {
-        _directionOverride = direction;
+        if (newestFirst == _newestFirst) return;
+        _newestFirst = newestFirst;
+        ApplyOrder();
+        _followTail = true;
         RebuildAll();
     }
 
-    public FlowDirection EffectivePanelDirection =>
-        _directionOverride ?? (Rtl.IsRtl(_language) ? FlowDirection.RightToLeft : FlowDirection.LeftToRight);
+    private const char ArrowUp = (char)0xE5D8, ArrowDown = (char)0xE5DB;
+
+    /// <summary>The order button (swap_vert) says in its tooltip where new text appears; "Latest" sits on that edge.</summary>
+    private void ApplyOrder()
+    {
+        var glyph = (_newestFirst ? ArrowUp : ArrowDown).ToString();
+        var tip = _newestFirst ? "New text appears at the top. Click to show it at the bottom"
+                               : "New text appears at the bottom. Click to show it at the top";
+        ToolTipService.SetToolTip(OrderButton, tip);
+        AutomationProperties.SetName(OrderButton, tip);
+        JumpIcon.Glyph = glyph;
+        JumpButton.VerticalAlignment = _newestFirst ? VerticalAlignment.Top : VerticalAlignment.Bottom;
+        JumpButton.Margin = _newestFirst ? new Thickness(0, 12, 0, 0) : new Thickness(0, 0, 0, 12);
+        Motion.AttachShowHide(JumpButton, 0, _newestFirst ? -8 : 8); // slides in from the edge it is pinned to
+    }
 
     public void SetScale(double scale)
     {
@@ -101,6 +118,7 @@ public sealed partial class TranscriptPanel : UserControl
     public void Render(IReadOnlyList<Segment> segments)
     {
         var visible = segments.Where(s => !s.IsEmpty).ToList();
+        _segments = visible;
         EmptyState.Visibility = visible.Count == 0 ? Visibility.Visible : Visibility.Collapsed;
 
         var alive = new HashSet<Segment>(visible);
@@ -110,10 +128,12 @@ public sealed partial class TranscriptPanel : UserControl
             _views.Remove(dead);
         }
 
-        for (var i = 0; i < visible.Count; i++)
+        var latest = visible.Count > 0 ? visible[^1] : null;
+        var ordered = _newestFirst ? Enumerable.Reverse(visible).ToList() : visible;
+        for (var i = 0; i < ordered.Count; i++)
         {
-            var seg = visible[i];
-            var active = i == visible.Count - 1;
+            var seg = ordered[i];
+            var active = seg == latest;
             if (!_views.TryGetValue(seg, out var view))
             {
                 view = new SegmentView();
@@ -129,44 +149,44 @@ public sealed partial class TranscriptPanel : UserControl
             }
         }
 
-        if (_followTail) ScrollToEnd();
+        if (_followTail) ScrollToLatest();
         else if (visible.Count > 0) JumpButton.Visibility = Visibility.Visible;
     }
 
     private FlowDirection DirectionFor(Segment s) =>
-        _directionOverride ?? (Rtl.IsRtl(s.Language ?? _language) ? FlowDirection.RightToLeft : FlowDirection.LeftToRight);
+        Rtl.IsRtl(s.Language ?? _language) ? FlowDirection.RightToLeft : FlowDirection.LeftToRight;
 
     private void RebuildAll()
     {
         foreach (var v in _views.Values) v.Invalidate();
-        var ordered = SegmentsHost.Children.Select(c => _views.FirstOrDefault(kv => kv.Value.Root == c).Key)
-            .Where(k => k is not null).ToList();
-        Render(ordered!);
+        Render(_segments);
     }
 
-    private void ScrollToEnd()
+    private void ScrollToLatest()
     {
         JumpButton.Visibility = Visibility.Collapsed;
         DispatcherQueue.TryEnqueue(Microsoft.UI.Dispatching.DispatcherQueuePriority.Low,
-            () => Scroller.ChangeView(null, Scroller.ScrollableHeight, null, true));
+            () => Scroller.ChangeView(null, _newestFirst ? 0 : Scroller.ScrollableHeight, null, true));
     }
 
     private void OnViewChanged(object? sender, ScrollViewerViewChangedEventArgs e)
     {
         if (e.IsIntermediate) return;
-        _followTail = Scroller.VerticalOffset >= Scroller.ScrollableHeight - 24;
+        _followTail = _newestFirst
+            ? Scroller.VerticalOffset <= 24
+            : Scroller.VerticalOffset >= Scroller.ScrollableHeight - 24;
         if (_followTail) JumpButton.Visibility = Visibility.Collapsed;
     }
 
     private void OnJumpClick(object sender, RoutedEventArgs e)
     {
         _followTail = true;
-        ScrollToEnd();
+        ScrollToLatest();
     }
 
     private void OnLanguageClick(object sender, RoutedEventArgs e) => LanguageClicked?.Invoke(this, EventArgs.Empty);
     private void OnClearClick(object sender, RoutedEventArgs e) => ClearClicked?.Invoke(this, EventArgs.Empty);
-    private void OnDirectionClick(object sender, RoutedEventArgs e) => DirectionToggled?.Invoke(this, EventArgs.Empty);
+    private void OnOrderClick(object sender, RoutedEventArgs e) => OrderToggled?.Invoke(this, EventArgs.Empty);
 
     /// <summary>Segment: padding 10×4, side border 2.5, outer radius 8, bottom margin 6.</summary>
     private sealed class SegmentView

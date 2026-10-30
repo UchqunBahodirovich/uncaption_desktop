@@ -34,7 +34,6 @@ public sealed partial class PlaygroundPage : Page
     private readonly DispatcherQueueTimer _tick;
     private NotesPanel? _notes;
     private OnboardingTour? _tour;
-    private FlowDirection? _sourceDirectionOverride;
     private bool _sidebarMini;
     private bool _dialogOpen;
     private bool _initialized;
@@ -43,12 +42,12 @@ public sealed partial class PlaygroundPage : Page
     {
         InitializeComponent();
 
-        SourcePanel.Configure("Live Transcription", false, "Transcription will appear here", "");
-        TranslationPanel.Configure("Live Translate", true, "Translation will appear here", "");
+        SourcePanel.Configure("Live Transcription", false, "Transcription will appear here", "");
+        TranslationPanel.Configure("Live Translate", true, "Translation will appear here", "");
         SourcePanel.LanguageClicked += (_, _) => _ = PickLanguageAsync(source: true);
         TranslationPanel.LanguageClicked += (_, _) => _ = PickLanguageAsync(source: false);
-        SourcePanel.ClearClicked += (_, _) => ClearSource();
-        SourcePanel.DirectionToggled += (_, _) => ToggleSourceDirection();
+        SourcePanel.ClearClicked += (_, _) => ClearTranscripts();
+        SourcePanel.OrderToggled += (_, _) => ToggleNewestFirst();
         Dictionary.CloseRequested += (_, _) => SetDictionaryOpen(false);
         Motion.AttachShowHide(Dictionary, 24, 0); // slides in from, and back out to, the right edge
 
@@ -161,6 +160,8 @@ public sealed partial class PlaygroundPage : Page
         TranslationPanel.SetLanguage(st.TargetLanguage, !locked);
         SourcePanel.SetScale(st.TextScale);
         TranslationPanel.SetScale(st.TextScale);
+        SourcePanel.SetNewestFirst(st.NewestOnTop);
+        TranslationPanel.SetNewestFirst(st.NewestOnTop);
         Dictionary.SetLanguages(st.SourceLanguage, st.TargetLanguage);
 
 
@@ -190,7 +191,7 @@ public sealed partial class PlaygroundPage : Page
 
         StartButton.IsEnabled = !busy;
         StartButton.Background = Brush(state == SessionState.Live ? "UcError" : "UcBrand");
-        StartIcon.Glyph = state == SessionState.Live ? "" : "";
+        StartIcon.Glyph = state == SessionState.Live ? "" : "";
         StartIcon.Visibility = busy ? Visibility.Collapsed : Visibility.Visible;
         StartSpinner.IsActive = busy;
         StartSpinner.Visibility = busy ? Visibility.Visible : Visibility.Collapsed;
@@ -287,19 +288,22 @@ public sealed partial class PlaygroundPage : Page
 
     // ═══ Transcript controls ═════════════════════════════════════════════════
 
-    private void ClearSource()
+    private void ClearTranscripts()
     {
-        // TEXT 03: left panel only; translation, clock, audio and usage continue.
+        // Clears both panels so they stay paired; the clock, audio and usage continue.
         _s.Transcript.Source.Clear();
-        RenderTranscripts(true, false);
-        Announce("Transcription cleared");
+        _s.Transcript.Translation.Clear();
+        RenderTranscripts(true, true);
+        Announce("Transcription and translation cleared");
     }
 
-    private void ToggleSourceDirection()
+    /// <summary>Both panels share one order so source and translation stay side by side.</summary>
+    private void ToggleNewestFirst()
     {
-        var current = _sourceDirectionOverride ?? SourcePanel.EffectivePanelDirection;
-        _sourceDirectionOverride = current == FlowDirection.RightToLeft ? FlowDirection.LeftToRight : FlowDirection.RightToLeft;
-        SourcePanel.SetDirectionOverride(_sourceDirectionOverride);
+        _s.Settings.NewestOnTop = !_s.Settings.NewestOnTop;
+        _s.Settings.Save();
+        RenderSettings();
+        Announce(_s.Settings.NewestOnTop ? "New text appears at the top" : "New text appears at the bottom");
     }
 
     private async Task PickLanguageAsync(bool source)
@@ -320,8 +324,6 @@ public sealed partial class PlaygroundPage : Page
             st.TargetLanguage = dialog.Selected;
         }
         st.Save();
-        if (source) _sourceDirectionOverride = null;
-        SourcePanel.SetDirectionOverride(_sourceDirectionOverride);
         RenderSettings();
     }
 
@@ -364,6 +366,8 @@ public sealed partial class PlaygroundPage : Page
         ProfileCard.Visibility = mini ? Visibility.Collapsed : Visibility.Visible;
         MiniProfile.Visibility = mini ? Visibility.Visible : Visibility.Collapsed;
         WorkspaceLabel.Visibility = AudioLabel.Visibility = mini ? Visibility.Collapsed : Visibility.Visible;
+        // Mini rail: short dividers stand in for the group labels, as in the web app.
+        WorkspaceDivider.Visibility = AudioDivider.Visibility = mini ? Visibility.Visible : Visibility.Collapsed;
         foreach (var b in NavButtons())
         {
             if (b.Content is StackPanel sp && sp.Children.Count > 1) sp.Children[1].Visibility = mini ? Visibility.Collapsed : Visibility.Visible;
@@ -415,7 +419,7 @@ public sealed partial class PlaygroundPage : Page
         else AutomationProperties.SetItemStatus(b, "");
     }
 
-    private static readonly string[] ModelGlyphs = ["", "", ""];
+    private static readonly string[] ModelGlyphs = ["", "", ""]; // tune, bolt, auto_awesome
     // Product decision: every Apex model is selectable. The consumer currently runs stt-rt-v4
     // for all of them (it ignores "model"); the domain is sent to Soniox as context.
     // The sidebar icons follow both selections.
@@ -423,7 +427,7 @@ public sealed partial class PlaygroundPage : Page
 
     private int DomainIndex => Math.Max(0, Catalogs.Domains.ToList().FindIndex(d => d.Name == _s.Settings.Domain));
 
-    private static readonly string[] DomainGlyphs = ["", "", "", "", "", ""];
+    private static readonly string[] DomainGlyphs = ["", "", "", "", "", ""]; // grid_view, medical_services, gavel, business_center, school, local_police
 
     private void OnModel(object sender, RoutedEventArgs e)
     {
@@ -454,7 +458,7 @@ public sealed partial class PlaygroundPage : Page
                 RenderSettings();
                 flyout?.Hide();
             }));
-        flyout = ShowPopup((Button)sender, "Domain", "Tunes recognition vocabulary for your field. Applies from the next session.", OptionList(cards));
+        flyout = ShowPopup((Button)sender, "Context", "Tunes recognition vocabulary for your field. Applies from the next session.", OptionList(cards));
     }
 
     // ═══ Account menu ════════════════════════════════════════════════════════
@@ -475,19 +479,19 @@ public sealed partial class PlaygroundPage : Page
 
         body.Children.Add(MenuLabel("APPEARANCE"));
         var dark = _s.Settings.DarkMode;
-        body.Children.Add(MenuRow(dark ? "" : "", dark ? "Light theme" : "Dark theme", dark ? "Dark" : "Light", danger: false, () =>
+        body.Children.Add(MenuRow(dark ? "" : "", dark ? "Light theme" : "Dark theme", dark ? "Dark" : "Light", danger: false, () =>
         {
             Close();
             ToggleTheme();
         }));
 
         body.Children.Add(new Border { Height = 1, Margin = new Thickness(4, 6, 4, 6), Background = Brush("UcBorderSubtle") });
-        body.Children.Add(MenuRow("", "Help & support", null, danger: false, () =>
+        body.Children.Add(MenuRow("", "Help & support", null, danger: false, () =>
         {
             Close();
             _ = ShowSupportAsync();
         }));
-        body.Children.Add(MenuRow("", "Log out", null, danger: true, () =>
+        body.Children.Add(MenuRow("", "Log out", null, danger: true, () =>
         {
             Close();
             _ = App.MainWindow.SignOutAsync();
@@ -843,7 +847,7 @@ public sealed partial class PlaygroundPage : Page
         {
             grid.Children.Add(new FontIcon
             {
-                Glyph = "",
+                Glyph = "",
                 FontSize = 10,
                 FontFamily = (FontFamily)Application.Current.Resources["UcIcons"],
                 Foreground = Brush("UcOnBrand"),
@@ -857,7 +861,7 @@ public sealed partial class PlaygroundPage : Page
         var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
         content.Children.Add(new FontIcon
         {
-            Glyph = "",
+            Glyph = "",
             FontSize = 9,
             FontFamily = (FontFamily)Application.Current.Resources["UcIcons"],
             Foreground = Brush("UcTextMuted"),
@@ -916,7 +920,7 @@ public sealed partial class PlaygroundPage : Page
 
         var notes = update.Notes?.Trim() ?? "";
         if (_s.Session.IsBusy) notes = (notes.Length > 0 ? notes + "\n\n" : "") + "The current session will be stopped first.";
-        var ask = Ui.Dialog(this, "", "Update available", $"Unicaption {update.Version} is ready to install.",
+        var ask = Ui.Dialog(this, "", "Update available", $"Unicaption {update.Version} is ready to install.",
             notes.Length > 0 ? notes : null);
         ask.PrimaryButtonText = "Update";
         ask.CloseButtonText = "Later";
@@ -932,7 +936,7 @@ public sealed partial class PlaygroundPage : Page
         var bar = new ProgressBar { IsIndeterminate = true, Width = 360, Margin = new Thickness(0, 8, 0, 0), Foreground = Brush("UcBrand") };
         var cts = new CancellationTokenSource();
         var finished = false;
-        var dialog = Ui.Dialog(this, "", "Downloading update", $"Unicaption {update.Version}", bar);
+        var dialog = Ui.Dialog(this, "", "Downloading update", $"Unicaption {update.Version}", bar);
         dialog.CloseButtonText = "Cancel";
         dialog.Closing += (_, args) =>
         {
@@ -995,28 +999,28 @@ public sealed partial class PlaygroundPage : Page
 
     private IEnumerable<OnboardingTour.Step> TourSteps() =>
     [
-        new(null, "", "Welcome to Unicaption",
+        new(null, "", "Welcome to Unicaption",
             "Live captions and translation for anything you hear. Here is a one-minute tour of your workspace.", Hero: true),
-        new(SourcePanel, "", "Live transcription",
+        new(SourcePanel, "", "Live transcription",
             "Speech appears here as it is recognised. Use the language pill to choose what is being spoken.",
             TeachingTipPlacementMode.Right),
-        new(TranslationPanel, "", "Live translation",
+        new(TranslationPanel, "", "Live translation",
             "The same speech, translated as you go. Pick the target language from the pill on this panel.",
             TeachingTipPlacementMode.Left),
-        new(MicNav, "", "Choose what to listen to",
+        new(MicNav, "", "Choose what to listen to",
             "Capture your microphone, the computer's sound (calls, videos), or both at once.",
             TeachingTipPlacementMode.Right),
-        new(ContextNav, "", "Add context",
+        new(ContextNav, "", "Add context",
             "Names, products and jargon you add here help recognition get specialist terms right.",
             TeachingTipPlacementMode.Right),
-        new(NotesNav, "", "Notes and dictionary",
+        new(NotesNav, "", "Notes and dictionary",
             "Keep a notepad beside the captions, or look up a single word without leaving the session.",
             TeachingTipPlacementMode.Right),
-        new(AccountButton, "", "Your account",
+        new(AccountButton, "", "Your account",
             "Click your name for text size, theme, help and log out.", TeachingTipPlacementMode.Right),
-        new(MiniAvatar, "", "Your account",
+        new(MiniAvatar, "", "Your account",
             "Click your avatar for text size, theme, help and log out.", TeachingTipPlacementMode.Right),
-        new(StartButton, "", "You're ready",
+        new(StartButton, "", "You're ready",
             "Press Start to begin captioning, and press it again to stop. You can replay this tour from Support.",
             TeachingTipPlacementMode.Top),
     ];

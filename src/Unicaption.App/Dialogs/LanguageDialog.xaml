@@ -9,7 +9,7 @@
     CloseButtonText="Cancel">
 
     <ContentDialog.Title>
-        <controls:DialogHeader x:Name="Header" Glyph="&#xE774;" />
+        <controls:DialogHeader x:Name="Header" Glyph="&#xE894;" />
     </ContentDialog.Title>
 
     <!-- Language dialog 460 × 600. Transcription: first pick = primary, further picks = hints.
@@ -70,7 +70,7 @@
                             </Border>
                             <Grid Width="20" Height="20" Visibility="{x:Bind SelectedVisibility, Mode=OneWay}">
                                 <Ellipse Fill="{ThemeResource UcBrand}" />
-                                <FontIcon Glyph="&#xE73E;" FontFamily="{StaticResource UcIcons}" FontSize="10"
+                                <FontIcon Glyph="&#xE5CA;" FontFamily="{StaticResource UcIcons}" FontSize="10"
                                           Foreground="{ThemeResource UcOnBrand}" />
                             </Grid>
                         </Grid>

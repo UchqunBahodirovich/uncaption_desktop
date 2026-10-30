@@ -15,10 +15,10 @@
 
             <Grid Padding="16,0,8,0" BorderBrush="{ThemeResource UcBorderSubtle}" BorderThickness="0,0,0,1">
                 <StackPanel Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
-                    <FontIcon Glyph="&#xE82D;" FontFamily="{StaticResource UcIcons}" FontSize="18" Foreground="{ThemeResource UcBrand}" />
+                    <FontIcon Glyph="&#xEA19;" FontFamily="{StaticResource UcIcons}" FontSize="18" Foreground="{ThemeResource UcBrand}" />
                     <TextBlock Text="Dictionary" Style="{StaticResource UcText}" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" />
                 </StackPanel>
-                <Button Style="{StaticResource UcIconButton}" Content="&#xE711;" HorizontalAlignment="Right" Click="OnClose"
+                <Button Style="{StaticResource UcIconButton}" Content="&#xE5CD;" HorizontalAlignment="Right" Click="OnClose"
                         ToolTipService.ToolTip="Close" AutomationProperties.Name="Close dictionary" />
             </Grid>
 
@@ -30,7 +30,7 @@
 
             <Grid Grid.Row="2" Padding="14,0,14,14">
                 <StackPanel x:Name="EmptyState" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
-                    <FontIcon Glyph="&#xE82D;" FontFamily="{StaticResource UcIcons}" FontSize="40" Foreground="{ThemeResource UcBorderSubtle}" />
+                    <FontIcon Glyph="&#xEA19;" FontFamily="{StaticResource UcIcons}" FontSize="40" Foreground="{ThemeResource UcBorderSubtle}" />
                     <TextBlock x:Name="EmptyText" Text="Search for a word to see its translation" Style="{StaticResource UcSecondaryText}"
                                FontSize="14" TextAlignment="Center" />
                 </StackPanel>

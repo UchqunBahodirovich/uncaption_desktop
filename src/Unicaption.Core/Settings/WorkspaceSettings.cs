@@ -23,6 +23,9 @@ public sealed class WorkspaceSettings
     public string Model { get; set; } = "Apex Gen-1";
     public double TextScale { get; set; } = 1.0;
     public bool SidebarExpanded { get; set; } = true;
+
+    /// <summary>Transcript order: false = new segments at the bottom, true = at the top.</summary>
+    public bool NewestOnTop { get; set; }
     public int AudioSource { get; set; }
 
     /// <summary>Set once the first-run tour was finished or skipped; Support → Start tour replays it.</summary>

@@ -199,7 +199,7 @@
         <Setter Property="CornerRadius" Value="8" />
         <Setter Property="Foreground" Value="{ThemeResource UcTextMuted}" />
         <Setter Property="FontFamily" Value="{StaticResource UcIcons}" />
-        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontSize" Value="18" />
     </Style>
 
     <!-- ═══ Window caption buttons (custom title bar) ═══════════════════════════
@@ -207,6 +207,7 @@
     <Style x:Key="UcCaptionButton" TargetType="Button" BasedOn="{StaticResource UcIconButton}">
         <Setter Property="Width" Value="40" />
         <Setter Property="Height" Value="32" />
+        <Setter Property="FontFamily" Value="{StaticResource UcSystemIcons}" />
         <Setter Property="FontSize" Value="10" />
         <Setter Property="Foreground" Value="{ThemeResource UcTextSecondary}" />
         <Setter Property="IsTabStop" Value="False" />
@@ -329,7 +330,7 @@
 
     <Style x:Key="UcTileIcon" TargetType="FontIcon">
         <Setter Property="FontFamily" Value="{StaticResource UcIcons}" />
-        <Setter Property="FontSize" Value="18" />
+        <Setter Property="FontSize" Value="20" />
         <Setter Property="Foreground" Value="{ThemeResource UcBrand}" />
     </Style>
 
@@ -397,7 +398,7 @@
 
     <Style x:Key="UcIcon" TargetType="FontIcon">
         <Setter Property="FontFamily" Value="{StaticResource UcIcons}" />
-        <Setter Property="FontSize" Value="19" />
+        <Setter Property="FontSize" Value="21" />
         <Setter Property="Foreground" Value="{ThemeResource UcTextSecondary}" />
     </Style>
 

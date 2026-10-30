@@ -158,7 +158,7 @@ public sealed partial class LanguageDialog : ContentDialog
         {
             content.Children.Add(new FontIcon
             {
-                Glyph = "",
+                Glyph = "",
                 FontSize = 9,
                 FontFamily = (Microsoft.UI.Xaml.Media.FontFamily)Application.Current.Resources["UcIcons"],
                 VerticalAlignment = VerticalAlignment.Center,

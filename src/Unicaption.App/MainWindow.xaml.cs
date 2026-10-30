@@ -50,6 +50,7 @@ public sealed partial class MainWindow : Window
     // ═══ Custom title bar ════════════════════════════════════════════════════
 
     private FrameworkElement? _titleBarInteractive;
+    private RectInt32 _dragRegion;
 
     /// <summary>
     /// Removes the system caption (title text + min/max/close) but keeps the resize border.
@@ -65,8 +66,8 @@ public sealed partial class MainWindow : Window
         };
         Activated += (_, args) =>
             CaptionButtons.Opacity = args.WindowActivationState == WindowActivationState.Deactivated ? 0.5 : 1;
-        Root.SizeChanged += (_, _) => UpdateDragRegion();
-        Root.Loaded += (_, _) => UpdateDragRegion();
+        // The logo button moves with the animated sidebar, so the region follows layout, not size.
+        Root.LayoutUpdated += (_, _) => UpdateDragRegion();
         RootFrame.Navigated += (_, _) => SetTitleBarInteractive((RootFrame.Content as PlaygroundPage)?.TitleBarInteractive);
     }
 
@@ -97,6 +98,8 @@ public sealed partial class MainWindow : Window
             : Root.ActualWidth;
 
         var caption = new RectInt32((int)(left * scale), 0, (int)(Math.Max(0, right - left) * scale), (int)(TitleBarHeight * scale));
+        if (caption.Equals(_dragRegion)) return; // LayoutUpdated fires often; only push changes
+        _dragRegion = caption;
         InputNonClientPointerSource.GetForWindowId(AppWindow.Id).SetRegionRects(NonClientRegionKind.Caption, [caption]);
     }
 

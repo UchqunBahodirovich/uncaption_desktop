@@ -37,13 +37,11 @@
                     </Border>
 
                     <StackPanel x:Name="SourceActions" Grid.Column="4" Orientation="Horizontal" Spacing="2" Visibility="Collapsed">
-                        <Button x:Name="DirectionButton" Style="{StaticResource UcIconButton}" Content="&#xE8AB;"
-                                Foreground="{ThemeResource UcBrand}" Click="OnDirectionClick"
-                                ToolTipService.ToolTip="Switch text direction"
-                                AutomationProperties.Name="Switch text direction" />
-                        <Button Style="{StaticResource UcIconButton}" Content="&#xE74D;" Click="OnClearClick"
-                                ToolTipService.ToolTip="Clear transcription"
-                                AutomationProperties.Name="Clear transcription" />
+                        <Button x:Name="OrderButton" Style="{StaticResource UcIconButton}" Content="&#xE8D5;"
+                                Foreground="{ThemeResource UcBrand}" Click="OnOrderClick" />
+                        <Button Style="{StaticResource UcIconButton}" Content="&#xE5D5;" Click="OnClearClick"
+                                ToolTipService.ToolTip="Clear transcription and translation"
+                                AutomationProperties.Name="Clear transcription and translation" />
                     </StackPanel>
 
                     <Button x:Name="TrailLanguagePill" Grid.Column="5" Style="{StaticResource UcLanguagePill}"
@@ -72,7 +70,7 @@
                         CornerRadius="10" MinHeight="32" HorizontalAlignment="Center" VerticalAlignment="Bottom"
                         Margin="0,0,0,12" Click="OnJumpClick" AutomationProperties.Name="Jump to latest">
                     <StackPanel Orientation="Horizontal" Spacing="6">
-                        <FontIcon Glyph="&#xE74B;" FontFamily="{StaticResource UcIcons}" FontSize="12" />
+                        <FontIcon x:Name="JumpIcon" Glyph="&#xE5DB;" FontFamily="{StaticResource UcIcons}" FontSize="12" />
                         <TextBlock Text="Latest" />
                     </StackPanel>
                 </Button>

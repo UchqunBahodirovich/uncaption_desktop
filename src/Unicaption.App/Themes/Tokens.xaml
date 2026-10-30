@@ -102,7 +102,10 @@
          fallback is Segoe UI Variable (Win 11) → Segoe UI (Win 10). To switch, drop the
          Plex .ttf files into Assets/Fonts and change this one resource. -->
     <FontFamily x:Key="UcFont">Segoe UI Variable Text, Segoe UI</FontFamily>
-    <FontFamily x:Key="UcIcons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+    <!-- Icons: Material Icons (Apache 2.0, bundled), the set the Unicaption web app uses, so both
+         products look alike. Window caption buttons keep the native Windows glyphs. -->
+    <FontFamily x:Key="UcIcons">ms-appx:///Assets/Fonts/MaterialIcons-Regular.ttf#Material Icons</FontFamily>
+    <FontFamily x:Key="UcSystemIcons">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
     <FontFamily x:Key="ContentControlThemeFontFamily">Segoe UI Variable Text, Segoe UI</FontFamily>
 
 </ResourceDictionary>

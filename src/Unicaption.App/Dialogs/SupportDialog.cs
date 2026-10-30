@@ -18,24 +18,24 @@ public sealed class SupportDialog : ContentDialog
     {
         XamlRoot = root;
         Style = (Style)Application.Current.Resources["UcDialogStyle"];
-        _header = new DialogHeader { Glyph = "", Heading = "Help & Support", Subtitle = "Get help, or replay the workspace tour." };
+        _header = new DialogHeader { Glyph = "", Heading = "Help & Support", Subtitle = "Get help, or replay the workspace tour." };
         Title = _header;
         CloseButtonText = "Close";
 
         var cfg = AppServices.Current.Config;
         var list = new StackPanel { Spacing = 2, Width = 380 };
-        list.Children.Add(Row("", "Start tour", "A one-minute walk through the workspace", () =>
+        list.Children.Add(Row("", "Start tour", "A one-minute walk through the workspace", () =>
         {
             TourRequested = true;
             Hide();
         }));
         if (!string.IsNullOrEmpty(cfg.SupportEmail))
-            list.Children.Add(Row("", cfg.SupportEmail, "Email support", () => Open("mailto:" + cfg.SupportEmail)));
+            list.Children.Add(Row("", cfg.SupportEmail, "Email support", () => Open("mailto:" + cfg.SupportEmail)));
         if (!string.IsNullOrEmpty(cfg.BookCallUrl))
-            list.Children.Add(Row("", "Book a call", "Opens Calendly", () => Open(cfg.BookCallUrl)));
+            list.Children.Add(Row("", "Book a call", "Opens Calendly", () => Open(cfg.BookCallUrl)));
         if (!string.IsNullOrEmpty(cfg.WhatsAppUrl))
-            list.Children.Add(Row("", "WhatsApp Group", "Product news and community help", () => Open(cfg.WhatsAppUrl)));
-        list.Children.Add(Row("", "Copy diagnostics", "No tokens, audio or transcript text", CopyDiagnostics));
+            list.Children.Add(Row("", "WhatsApp Group", "Product news and community help", () => Open(cfg.WhatsAppUrl)));
+        list.Children.Add(Row("", "Copy diagnostics", "No tokens, audio or transcript text", CopyDiagnostics));
         Content = list;
     }
 

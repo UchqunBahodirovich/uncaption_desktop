@@ -17,18 +17,10 @@
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
-        <!-- ═══ Top bar (48) = window drag strip: logo + name toggles the sidebar; caption buttons
-             are drawn by MainWindow at the right edge ═══ -->
-        <Button x:Name="BrandButton" Style="{StaticResource UcButtonBase}" Margin="16,0,0,0" Padding="8,6"
-                CornerRadius="10" HorizontalAlignment="Left" Click="OnToggleSidebar"
-                ToolTipService.ToolTip="Toggle sidebar" AutomationProperties.Name="Toggle sidebar">
-            <StackPanel Orientation="Horizontal" Spacing="12">
-                <Image Source="ms-appx:///Assets/icon128.png" Width="26" Height="26" />
-                <TextBlock Text="Unicaption" Style="{StaticResource UcText}" FontSize="16" FontWeight="ExtraBold" VerticalAlignment="Center" />
-            </StackPanel>
-        </Button>
-
-        <Grid Grid.Row="1">
+        <!-- The sidebar runs the full window height (as in the web app); the 48 px top strip over the
+             workspace is the window drag area, with the logo button at its left and the caption
+             buttons (drawn by MainWindow) at its right. -->
+        <Grid Grid.RowSpan="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto" />
                 <ColumnDefinition Width="*" />
@@ -36,7 +28,7 @@
 
             <!-- ═══ Sidebar: 264 / 72, translucent nav surface; only the inner (right) corners are
                  rounded, the outer edge stays flush with the window in both widths ═══ -->
-            <Border x:Name="Sidebar" Width="264" BorderBrush="{ThemeResource UcBorderSubtle}" BorderThickness="0,1,1,1"
+            <Border x:Name="Sidebar" Width="264" BorderBrush="{ThemeResource UcBorderSubtle}" BorderThickness="0,0,1,1"
                     CornerRadius="0,16,16,0">
                 <Border.Background>
                     <AcrylicBrush TintColor="{ThemeResource UcBgStop1}" TintOpacity="0.55" FallbackColor="{ThemeResource UcBgStop1}" />
@@ -74,7 +66,7 @@
                                                    Foreground="{ThemeResource UcBrand}" />
                                     </Border>
                                 </StackPanel>
-                                <FontIcon Grid.Column="2" Glyph="&#xE76C;" FontFamily="{StaticResource UcIcons}" FontSize="12"
+                                <FontIcon Grid.Column="2" Glyph="&#xE5CC;" FontFamily="{StaticResource UcIcons}" FontSize="12"
                                           Foreground="{ThemeResource UcTextMuted}" />
                             </Grid>
                             </Button>
@@ -104,53 +96,55 @@
                         <StackPanel x:Name="NavStack">
                             <Button x:Name="ModelNav" Style="{StaticResource UcNavButton}" Click="OnModel" AutomationProperties.Name="Model">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <FontIcon Glyph="&#xE9E9;" Style="{StaticResource UcIcon}" />
+                                    <FontIcon Glyph="&#xE429;" Style="{StaticResource UcIcon}" />
                                     <TextBlock Text="Model" Style="{StaticResource UcNavLabel}" />
                                 </StackPanel>
                             </Button>
-                            <Button x:Name="DomainNav" Style="{StaticResource UcNavButton}" Click="OnDomain" AutomationProperties.Name="Domain">
+                            <Button x:Name="DomainNav" Style="{StaticResource UcNavButton}" Click="OnDomain" AutomationProperties.Name="Context domain">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <FontIcon Glyph="&#xE80A;" Style="{StaticResource UcIcon}" />
-                                    <TextBlock Text="Domain" Style="{StaticResource UcNavLabel}" />
+                                    <FontIcon Glyph="&#xE9B0;" Style="{StaticResource UcIcon}" />
+                                    <TextBlock Text="Context" Style="{StaticResource UcNavLabel}" />
                                 </StackPanel>
                             </Button>
 
                             <TextBlock x:Name="WorkspaceLabel" Text="WORKSPACE" Style="{StaticResource UcSectionLabel}" Margin="8,18,8,8" />
+                            <Border x:Name="WorkspaceDivider" Visibility="Collapsed" Height="1" Width="28" Margin="0,10" HorizontalAlignment="Center" Background="{ThemeResource UcBorderSubtle}" />
                             <Button x:Name="ContextNav" Style="{StaticResource UcNavButton}" Click="OnContext" AutomationProperties.Name="Context">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <FontIcon Glyph="&#xE8A5;" Style="{StaticResource UcIcon}" />
+                                    <FontIcon Glyph="&#xE873;" Style="{StaticResource UcIcon}" />
                                     <TextBlock Text="Context" Style="{StaticResource UcNavLabel}" />
                                 </StackPanel>
                             </Button>
                             <Button x:Name="NotesNav" Style="{StaticResource UcNavButton}" Click="OnNotes" AutomationProperties.Name="Notes">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <FontIcon Glyph="&#xE70F;" Style="{StaticResource UcIcon}" />
+                                    <FontIcon Glyph="&#xE745;" Style="{StaticResource UcIcon}" />
                                     <TextBlock Text="Notes" Style="{StaticResource UcNavLabel}" />
                                 </StackPanel>
                             </Button>
                             <Button x:Name="DictionaryNav" Style="{StaticResource UcNavButton}" Click="OnDictionary" AutomationProperties.Name="Dictionary">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <FontIcon Glyph="&#xE82D;" Style="{StaticResource UcIcon}" />
+                                    <FontIcon Glyph="&#xEA19;" Style="{StaticResource UcIcon}" />
                                     <TextBlock Text="Dictionary" Style="{StaticResource UcNavLabel}" />
                                 </StackPanel>
                             </Button>
 
                             <TextBlock x:Name="AudioLabel" Text="AUDIO" Style="{StaticResource UcSectionLabel}" Margin="8,18,8,8" />
+                            <Border x:Name="AudioDivider" Visibility="Collapsed" Height="1" Width="28" Margin="0,10" HorizontalAlignment="Center" Background="{ThemeResource UcBorderSubtle}" />
                             <Button x:Name="MicNav" Tag="0" Style="{StaticResource UcNavButton}" Click="OnAudioSource" AutomationProperties.Name="Microphone">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <FontIcon Glyph="&#xE720;" Style="{StaticResource UcIcon}" />
+                                    <FontIcon Glyph="&#xE029;" Style="{StaticResource UcIcon}" />
                                     <TextBlock Text="Mic" Style="{StaticResource UcNavLabel}" />
                                 </StackPanel>
                             </Button>
                             <Button x:Name="SystemNav" Tag="1" Style="{StaticResource UcNavButton}" Click="OnAudioSource" AutomationProperties.Name="System audio">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <FontIcon Glyph="&#xE767;" Style="{StaticResource UcIcon}" />
+                                    <FontIcon Glyph="&#xE050;" Style="{StaticResource UcIcon}" />
                                     <TextBlock Text="System" Style="{StaticResource UcNavLabel}" />
                                 </StackPanel>
                             </Button>
                             <Button x:Name="BothNav" Tag="2" Style="{StaticResource UcNavButton}" Click="OnAudioSource" AutomationProperties.Name="Microphone and system audio">
                                 <StackPanel Orientation="Horizontal" Spacing="12">
-                                    <FontIcon Glyph="&#xE81E;" Style="{StaticResource UcIcon}" />
+                                    <FontIcon Glyph="&#xE02F;" Style="{StaticResource UcIcon}" />
                                     <TextBlock Text="Both" Style="{StaticResource UcNavLabel}" />
                                 </StackPanel>
                             </Button>
@@ -162,12 +156,23 @@
             <!-- ═══ Workspace: two equal panels (gap 16), padding 16/16/16/8, Start below ═══ -->
             <Grid Grid.Column="1">
                 <Grid.RowDefinitions>
+                    <RowDefinition Height="48" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
 
-                <Grid Padding="16,16,16,8" ColumnSpacing="16">
+                <!-- Logo + name toggles the sidebar -->
+                <Button x:Name="BrandButton" Style="{StaticResource UcButtonBase}" Margin="8,0,0,0" Padding="8,6"
+                        CornerRadius="10" HorizontalAlignment="Left" VerticalAlignment="Center" Click="OnToggleSidebar"
+                        ToolTipService.ToolTip="Toggle sidebar" AutomationProperties.Name="Toggle sidebar">
+                    <StackPanel Orientation="Horizontal" Spacing="12">
+                        <Image Source="ms-appx:///Assets/icon128.png" Width="26" Height="26" />
+                        <TextBlock Text="Unicaption" Style="{StaticResource UcText}" FontSize="16" FontWeight="ExtraBold" VerticalAlignment="Center" />
+                    </StackPanel>
+                </Button>
+
+                <Grid Grid.Row="1" Padding="16,8,16,8" ColumnSpacing="16">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="*" />
@@ -176,13 +181,13 @@
                     <controls:TranscriptPanel x:Name="TranslationPanel" Grid.Column="1" />
                 </Grid>
 
-                <InfoBar x:Name="ErrorBar" Grid.Row="1" Margin="16,4,16,0" Severity="Error" IsOpen="False"
+                <InfoBar x:Name="ErrorBar" Grid.Row="2" Margin="16,4,16,0" Severity="Error" IsOpen="False"
                          CloseButtonClick="OnErrorClosed" />
 
-                <Button x:Name="StartButton" Grid.Row="2" Style="{StaticResource UcPillButton}" HorizontalAlignment="Center"
+                <Button x:Name="StartButton" Grid.Row="3" Style="{StaticResource UcPillButton}" HorizontalAlignment="Center"
                         Margin="0,4,0,20" Click="OnStartStop">
                     <StackPanel Orientation="Horizontal" Spacing="8">
-                        <FontIcon x:Name="StartIcon" Glyph="&#xE720;" FontFamily="{StaticResource UcIcons}" FontSize="17" />
+                        <FontIcon x:Name="StartIcon" Glyph="&#xE029;" FontFamily="{StaticResource UcIcons}" FontSize="17" />
                         <ProgressRing x:Name="StartSpinner" IsActive="False" Visibility="Collapsed" Width="16" Height="16"
                                       MinWidth="16" MinHeight="16" Foreground="{ThemeResource UcOnBrand}"
                                       AutomationProperties.AccessibilityView="Raw" />

@@ -19,16 +19,16 @@
                   PointerPressed="OnHeaderPressed" PointerMoved="OnHeaderMoved"
                   PointerReleased="OnHeaderReleased" PointerCaptureLost="OnHeaderReleased">
                 <StackPanel Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
-                    <FontIcon Glyph="&#xE76F;" FontFamily="{StaticResource UcIcons}" FontSize="14" Foreground="{ThemeResource UcTextMuted}" />
-                    <FontIcon Glyph="&#xE70F;" FontFamily="{StaticResource UcIcons}" FontSize="16" Foreground="{ThemeResource UcBrand}" />
+                    <FontIcon Glyph="&#xE25D;" FontFamily="{StaticResource UcIcons}" FontSize="14" Foreground="{ThemeResource UcTextMuted}" />
+                    <FontIcon Glyph="&#xE745;" FontFamily="{StaticResource UcIcons}" FontSize="16" Foreground="{ThemeResource UcBrand}" />
                     <TextBlock Text="Notepad" Style="{StaticResource UcText}" FontSize="15" FontWeight="Bold" VerticalAlignment="Center" />
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="2">
-                    <Button Style="{StaticResource UcIconButton}" Content="&#xE8C8;" Click="OnCopy"
+                    <Button Style="{StaticResource UcIconButton}" Content="&#xE14D;" Click="OnCopy"
                             ToolTipService.ToolTip="Copy" AutomationProperties.Name="Copy notes" />
-                    <Button Style="{StaticResource UcIconButton}" Content="&#xE74D;" Click="OnClear"
+                    <Button Style="{StaticResource UcIconButton}" Content="&#xE872;" Click="OnClear"
                             ToolTipService.ToolTip="Clear" AutomationProperties.Name="Clear notes" />
-                    <Button Style="{StaticResource UcIconButton}" Content="&#xE711;" Click="OnClose"
+                    <Button Style="{StaticResource UcIconButton}" Content="&#xE5CD;" Click="OnClose"
                             ToolTipService.ToolTip="Close" AutomationProperties.Name="Close notes" />
                 </StackPanel>
             </Grid>
@@ -48,7 +48,7 @@
                         PointerPressed="OnGripPressed" PointerMoved="OnGripMoved"
                         PointerReleased="OnGripReleased" PointerCaptureLost="OnGripReleased"
                         ToolTipService.ToolTip="Resize">
-                    <FontIcon Glyph="&#xE740;" FontFamily="{StaticResource UcIcons}" FontSize="12"
+                    <FontIcon Glyph="&#xF1CE;" FontFamily="{StaticResource UcIcons}" FontSize="12"
                               Foreground="{ThemeResource UcTextMuted}" />
                 </Border>
             </Grid>

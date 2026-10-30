@@ -8,7 +8,7 @@
     CloseButtonText="Cancel">
 
     <ContentDialog.Title>
-        <controls:DialogHeader Glyph="&#xE8A5;" Heading="Context"
+        <controls:DialogHeader Glyph="&#xE873;" Heading="Context"
                                Subtitle="Helps captioning recognise domain-specific terms." />
     </ContentDialog.Title>
 
