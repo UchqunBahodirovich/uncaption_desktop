@@ -13,4 +13,8 @@
     <InternalsVisibleTo Include="Unicaption.Core.Tests" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Concentus" Version="2.2.2" />
+  </ItemGroup>
+
 </Project>

@@ -83,9 +83,21 @@ public class TokenParserTests
         Assert.Equal("ru", (string?)json["translation"]!["language_b"]);
         Assert.Null(json["language_hints"]); // without hints the consumer gets "language"
         Assert.Equal("en", (string?)json["language"]);
+        Assert.Equal("auto", (string?)json["audio_format"]); // Ogg/Opus; the consumer forces "auto" anyway
+        Assert.Null(json["sample_rate"]);
+        Assert.Null(json["context"]);
+    }
+
+    [Theory] // the consumer routes Somali to ElevenLabs, which takes raw PCM
+    [InlineData("so", null)]
+    [InlineData("en", "so")]
+    public void Config_Somali_KeepsRawPcm(string source, string? hint)
+    {
+        var config = new RealtimeConfig("stt-rt-v3", source, "en", hint is null ? null : [hint]);
+        Assert.True(config.SendsRawPcm);
+        var json = JsonNode.Parse(config.ToJson())!.AsObject();
         Assert.Equal("pcm_s16le", (string?)json["audio_format"]);
         Assert.Equal(16000, (int)json["sample_rate"]!);
-        Assert.Null(json["context"]);
     }
 
     [Fact]

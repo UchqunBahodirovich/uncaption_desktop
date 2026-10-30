@@ -93,6 +93,7 @@ public sealed class RealtimeClient : IAsyncDisposable
     private readonly SemaphoreSlim _sendLock = new(1, 1);
     private readonly TaskCompletionSource _authenticated = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private RealtimeConfig? _config;
+    private OggOpusEncoder? _encoder; // null = raw PCM (ElevenLabs route)
     private Task? _receiveLoop;
     private Task? _pingLoop;
     private Task? _audioLoop;
@@ -119,6 +120,7 @@ public sealed class RealtimeClient : IAsyncDisposable
     public async Task ConnectAsync(Uri uri, string idToken, RealtimeConfig config, CancellationToken ct)
     {
         _config = config;
+        _encoder = config.SendsRawPcm ? null : new OggOpusEncoder();
         using var linked = CancellationTokenSource.CreateLinkedTokenSource(ct, _life.Token);
         linked.CancelAfter(_authTimeout);
         try
@@ -127,9 +129,9 @@ public sealed class RealtimeClient : IAsyncDisposable
             _receiveLoop = Task.Run(ReceiveLoopAsync);
             await SendTextAsync(RealtimeConfig.AuthJson(idToken), linked.Token).ConfigureAwait(false);
             await _authenticated.Task.WaitAsync(linked.Token).ConfigureAwait(false);
-            await SendTextAsync(config.ToJson(), linked.Token).ConfigureAwait(false);
+            await SendConfigAsync(linked.Token).ConfigureAwait(false);
             _pingLoop = Task.Run(PingLoopAsync);
-            _diag.Info("ws.authenticated");
+            _diag.Info("ws.authenticated", ("audio", _encoder is null ? "pcm_s16le" : "ogg_opus"));
         }
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
@@ -247,7 +249,7 @@ public sealed class RealtimeClient : IAsyncDisposable
                 {
                     _diag.Warn("ws.upstream_disconnected", ("attempt", _configResends.ToString()));
                     _ = Task.Delay(1000, _life.Token).ContinueWith(
-                        _ => SendTextAsync(_config.ToJson(), _life.Token), TaskContinuationOptions.OnlyOnRanToCompletion);
+                        _ => SendConfigAsync(_life.Token), TaskContinuationOptions.OnlyOnRanToCompletion);
                 }
                 else
                 {
@@ -271,7 +273,8 @@ public sealed class RealtimeClient : IAsyncDisposable
         {
             var batch = TokenParser.Parse(tokens);
             if (batch.Count == 0) return;
-            Interlocked.Exchange(ref _lastTokenAtTicks, DateTime.UtcNow.Ticks);
+            if (Interlocked.Exchange(ref _lastTokenAtTicks, DateTime.UtcNow.Ticks) == 0)
+                _diag.Info("ws.first_tokens", ("bytes_sent", BytesSent.ToString()));
             TokensReceived?.Invoke(this, batch);
         }
     }
@@ -302,8 +305,9 @@ public sealed class RealtimeClient : IAsyncDisposable
                 await _sendLock.WaitAsync(_life.Token).ConfigureAwait(false);
                 try
                 {
-                    await _ws.SendBinaryAsync(chunk, _life.Token).ConfigureAwait(false);
-                    BytesSent += chunk.Length;
+                    var payload = _encoder is null ? chunk : _encoder.Encode(chunk);
+                    if (payload.Length > 0) await _ws.SendBinaryAsync(payload, _life.Token).ConfigureAwait(false);
+                    BytesSent += payload.Length;
                 }
                 finally
                 {
@@ -315,6 +319,24 @@ public sealed class RealtimeClient : IAsyncDisposable
         catch (Exception e)
         {
             RaiseClosed(RealtimeCloseReason.Error, e);
+        }
+    }
+
+    /// <summary>
+    /// Sends the config; every config opens a new upstream Soniox stream, so the Ogg stream is
+    /// restarted under the same lock and the next audio frame carries fresh Opus headers.
+    /// </summary>
+    private async Task SendConfigAsync(CancellationToken ct)
+    {
+        await _sendLock.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            await _ws.SendTextAsync(_config!.ToJson(), ct).ConfigureAwait(false);
+            _encoder?.Reset();
+        }
+        finally
+        {
+            _sendLock.Release();
         }
     }
 

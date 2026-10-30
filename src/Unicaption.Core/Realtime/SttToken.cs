@@ -57,8 +57,9 @@ public static class TokenParser
 /// it reads <c>language</c> first and only falls back to <c>language_hints</c>, so with hints the
 /// list (primary first) is sent and <c>language</c> is left out. <c>context</c> is forwarded to
 /// Soniox unchanged: the domain goes in <c>general</c>, Custom Context in <c>terms</c> (both
-/// verified against the live service). The raw-PCM fields describe what the app streams; the
-/// consumer still sends <c>audio_format: auto</c> upstream until it honours them.
+/// verified against the live service). Audio: the consumer always asks Soniox for
+/// <c>audio_format: auto</c>, so the app streams Ogg/Opus, which "auto" detects. Somali is routed
+/// to ElevenLabs, which takes raw PCM, so it keeps the headerless PCM16 stream.
 /// </summary>
 public sealed record RealtimeConfig(string Model, string SourceLanguage, string TargetLanguage,
     IReadOnlyList<string>? LanguageHints = null, string? Domain = null, IReadOnlyList<string>? ContextTerms = null)
@@ -66,15 +67,18 @@ public sealed record RealtimeConfig(string Model, string SourceLanguage, string 
     /// <summary>Catalog value meaning "no domain"; it is not sent.</summary>
     public const string GeneralDomain = "General";
 
+    /// <summary>Source language the consumer sends to ElevenLabs (raw PCM) instead of Soniox.</summary>
+    public const string RawPcmLanguage = "so";
+
+    /// <summary>True when the consumer routes this session to ElevenLabs, which needs raw PCM.</summary>
+    public bool SendsRawPcm => SourceLanguage == RawPcmLanguage || (LanguageHints ?? []).Contains(RawPcmLanguage);
+
     public string ToJson()
     {
         var json = new JsonObject
         {
             ["type"] = "config",
             ["model"] = Model,
-            ["audio_format"] = "pcm_s16le",
-            ["sample_rate"] = AudioFormat.SampleRate,
-            ["num_channels"] = AudioFormat.Channels,
             ["enable_speaker_diarization"] = true,
             ["enable_streaming_translation"] = true,
             ["translation"] = new JsonObject
@@ -84,6 +88,17 @@ public sealed record RealtimeConfig(string Model, string SourceLanguage, string 
                 ["language_b"] = TargetLanguage,
             },
         };
+        if (SendsRawPcm)
+        {
+            json["audio_format"] = "pcm_s16le";
+            json["sample_rate"] = AudioFormat.SampleRate;
+            json["num_channels"] = AudioFormat.Channels;
+        }
+        else
+        {
+            json["audio_format"] = "auto"; // Ogg/Opus, see OggOpusEncoder
+        }
+
         var hints = (LanguageHints ?? []).Where(h => h != SourceLanguage).Distinct().ToList();
         if (hints.Count > 0)
         {

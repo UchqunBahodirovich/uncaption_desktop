@@ -211,7 +211,18 @@ public class SessionControllerTests
         var rig = new Rig();
         await rig.Controller.StartAsync(Rig.Options);
         rig.Audio.Sink!(new byte[3200]);
-        await WaitUntil(() => Interlocked.Read(ref rig.Sockets[0].BinaryBytes) == 3200);
+        await WaitUntil(() => Interlocked.Read(ref rig.Sockets[0].BinaryBytes) > 0);
         Assert.Contains(rig.Sockets[0].SentText, t => t.Contains("\"config\""));
+        lock (rig.Sockets[0].Binary)
+            Assert.Equal("OggS"u8.ToArray(), rig.Sockets[0].Binary[0][..4]); // Ogg/Opus, not raw PCM
+    }
+
+    [Fact] // ElevenLabs (Somali) route: the PCM bytes go out unchanged
+    public async Task SomaliAudioIsForwardedAsRawPcm()
+    {
+        var rig = new Rig();
+        await rig.Controller.StartAsync(new SessionOptions(AudioSourceKind.Mic, new RealtimeConfig("stt-rt-v3", "so", "en")));
+        rig.Audio.Sink!(new byte[3200]);
+        await WaitUntil(() => Interlocked.Read(ref rig.Sockets[0].BinaryBytes) == 3200);
     }
 }

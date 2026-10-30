@@ -77,6 +77,7 @@ internal sealed class FakeWs : IWsConnection
     public string AuthReply = "{\"status\": \"authenticated\", \"plan\": \"ultra\"}";
     public readonly List<string> SentText = [];
     public long BinaryBytes;
+    public readonly List<byte[]> Binary = [];
     public bool Closed;
 
     public Task ConnectAsync(Uri uri, CancellationToken ct) => Task.CompletedTask;
@@ -91,6 +92,7 @@ internal sealed class FakeWs : IWsConnection
     public Task SendBinaryAsync(ReadOnlyMemory<byte> data, CancellationToken ct)
     {
         Interlocked.Add(ref BinaryBytes, data.Length);
+        lock (Binary) Binary.Add(data.ToArray());
         return Task.CompletedTask;
     }
 
