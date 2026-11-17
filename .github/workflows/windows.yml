@@ -19,6 +19,21 @@ jobs:
       - name: Install Inno Setup
         run: choco install innosetup -y --no-progress
 
+      # Public client identifiers only (RFC 8252 desktop client). Set once with:
+      #   gh variable set GOOGLE_DESKTOP_CLIENT_ID --body "<id>.apps.googleusercontent.com"
+      - name: Write public app config
+        shell: pwsh
+        env:
+          GOOGLE_DESKTOP_CLIENT_ID: ${{ vars.GOOGLE_DESKTOP_CLIENT_ID }}
+          GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.GOOGLE_DESKTOP_CLIENT_SECRET }}
+        run: |
+          $cfg = [ordered]@{}
+          if ($env:GOOGLE_DESKTOP_CLIENT_ID) { $cfg.GoogleDesktopClientId = $env:GOOGLE_DESKTOP_CLIENT_ID }
+          if ($env:GOOGLE_DESKTOP_CLIENT_SECRET) { $cfg.GoogleDesktopClientSecret = $env:GOOGLE_DESKTOP_CLIENT_SECRET }
+          if ($cfg.Count -eq 0) { Write-Host "No Google client configured: build offers email sign-in only."; exit 0 }
+          $cfg | ConvertTo-Json | Set-Content src/Unicaption.App/unicaption.config.json -Encoding utf8
+          Write-Host "Google sign-in enabled for this build."
+
       - name: Test, publish and package
         shell: pwsh
         run: ./installer/build_installer.ps1

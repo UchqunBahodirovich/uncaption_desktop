@@ -26,6 +26,13 @@ public sealed class AuthCancelledException() : Exception("Sign in cancelled.");
 
 public sealed class ReauthenticationRequiredException() : Exception("Sign in again to continue.");
 
+/// <summary>Email/password failure with a user-facing message (no server text is shown).</summary>
+public sealed class AuthFailedException(string code, string message) : Exception(message)
+{
+    /// <summary>Firebase error code, e.g. INVALID_LOGIN_CREDENTIALS (for diagnostics).</summary>
+    public string Code { get; } = code;
+}
+
 /// <summary>
 /// AUTH 01/02: Google sign-in in the system browser using an RFC 8252 loopback redirect
 /// with state + PKCE, then a Firebase ID token via identitytoolkit. The Firebase refresh
@@ -64,6 +71,11 @@ public sealed class AuthService : IAccessTokenProvider
 
     public UserProfile? User => _session?.ToProfile();
     public bool IsSignedIn => _session is not null;
+
+    /// <summary>False when this build has no Google Desktop OAuth client; the UI then hides Google sign-in.</summary>
+    public bool IsGoogleConfigured => !string.IsNullOrWhiteSpace(_config.GoogleDesktopClientId);
+
+    public const int MinPasswordLength = 6;
 
     /// <summary>Restores a stored session. Returns false when the user must sign in.</summary>
     public bool TryRestore()
@@ -122,6 +134,127 @@ public sealed class AuthService : IAccessTokenProvider
         _idTokenExpiry = firebase.expiry;
         _secrets.Write(SecretKey, _session.Serialize());
         return _session.ToProfile();
+    }
+
+    /// <summary>Email + password sign-in (Firebase accounts:signInWithPassword).</summary>
+    public async Task<UserProfile> SignInWithPasswordAsync(string email, string password, CancellationToken ct)
+    {
+        var json = await IdentityToolkitAsync("accounts:signInWithPassword", new JsonObject
+        {
+            ["email"] = email.Trim(),
+            ["password"] = password,
+            ["returnSecureToken"] = true,
+        }, ct).ConfigureAwait(false);
+        return Complete(json);
+    }
+
+    /// <summary>
+    /// Creates an email/password account (accounts:signUp), then stores the name as the Firebase
+    /// display name, the same as the web app's sign-up form.
+    /// </summary>
+    public async Task<UserProfile> SignUpWithPasswordAsync(string email, string password, string? displayName,
+        CancellationToken ct)
+    {
+        if (password.Length < MinPasswordLength)
+            throw new AuthFailedException("WEAK_PASSWORD", $"Password must be at least {MinPasswordLength} characters.");
+
+        var json = await IdentityToolkitAsync("accounts:signUp", new JsonObject
+        {
+            ["email"] = email.Trim(),
+            ["password"] = password,
+            ["returnSecureToken"] = true,
+        }, ct).ConfigureAwait(false);
+
+        var name = displayName?.Trim();
+        if (!string.IsNullOrEmpty(name))
+        {
+            try
+            {
+                var updated = await IdentityToolkitAsync("accounts:update", new JsonObject
+                {
+                    ["idToken"] = Required(json, "idToken"),
+                    ["displayName"] = name,
+                    ["returnSecureToken"] = true,
+                }, ct).ConfigureAwait(false);
+                json["displayName"] = name;
+                foreach (var key in new[] { "idToken", "refreshToken", "expiresIn" })
+                    if (JsonNormalizer.OptionalString(updated, key) is { } v) json[key] = v;
+            }
+            catch (AuthFailedException)
+            {
+                // The account exists and is usable; only the name is missing. Keep the sign-in.
+            }
+        }
+        return Complete(json);
+    }
+
+    /// <summary>Sends Firebase's password reset email. Unknown addresses are not revealed.</summary>
+    public async Task SendPasswordResetAsync(string email, CancellationToken ct)
+    {
+        try
+        {
+            await IdentityToolkitAsync("accounts:sendOobCode", new JsonObject
+            {
+                ["requestType"] = "PASSWORD_RESET",
+                ["email"] = email.Trim(),
+            }, ct).ConfigureAwait(false);
+        }
+        catch (AuthFailedException e) when (e.Code == "EMAIL_NOT_FOUND")
+        {
+            // Same outcome as a known address, so the form cannot be used to probe accounts.
+        }
+    }
+
+    private UserProfile Complete(JsonObject json)
+    {
+        _session = new StoredSession(
+            Required(json, "localId"),
+            JsonNormalizer.OptionalString(json, "email") ?? "",
+            JsonNormalizer.OptionalString(json, "displayName"),
+            Required(json, "refreshToken"));
+        _idToken = Required(json, "idToken");
+        _idTokenExpiry = _now().AddSeconds(ParseSeconds(json, "expiresIn"));
+        _secrets.Write(SecretKey, _session.Serialize());
+        return _session.ToProfile();
+    }
+
+    private async Task<JsonObject> IdentityToolkitAsync(string method, JsonObject payload, CancellationToken ct)
+    {
+        using var resp = await _http.PostAsync(
+            $"https://identitytoolkit.googleapis.com/v1/{method}?key={Uri.EscapeDataString(_config.FirebaseApiKey)}",
+            new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"), ct).ConfigureAwait(false);
+        var body = await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        if (resp.IsSuccessStatusCode) return ApiClient.Decode(body);
+        if ((int)resp.StatusCode == 400) throw MapFirebaseError(body);
+        throw new ApiException((int)resp.StatusCode, body);
+    }
+
+    /// <summary>Firebase returns {"error":{"message":"CODE : details"}}; only the code is used.</summary>
+    internal static AuthFailedException MapFirebaseError(string body)
+    {
+        string code;
+        try
+        {
+            code = (JsonNode.Parse(body)?["error"]?["message"]?.GetValue<string>() ?? "").Split(' ', ':')[0].Trim();
+        }
+        catch (Exception e) when (e is System.Text.Json.JsonException or InvalidOperationException)
+        {
+            code = "";
+        }
+        var message = code switch
+        {
+            "INVALID_LOGIN_CREDENTIALS" or "INVALID_PASSWORD" or "EMAIL_NOT_FOUND" =>
+                "Email or password is incorrect.",
+            "EMAIL_EXISTS" => "An account with this email already exists. Sign in instead.",
+            "INVALID_EMAIL" or "MISSING_EMAIL" => "Enter a valid email address.",
+            "MISSING_PASSWORD" => "Enter your password.",
+            "WEAK_PASSWORD" => $"Password must be at least {MinPasswordLength} characters.",
+            "TOO_MANY_ATTEMPTS_TRY_LATER" => "Too many attempts. Wait a few minutes and try again.",
+            "USER_DISABLED" => "This account has been disabled. Contact support.",
+            "OPERATION_NOT_ALLOWED" or "PASSWORD_LOGIN_DISABLED" => "Email sign-in is not available right now.",
+            _ => "Sign in failed. Please try again.",
+        };
+        return new AuthFailedException(code, message);
     }
 
     /// <summary>Clears credentials. Preferences (theme etc.) are kept by the caller.</summary>
