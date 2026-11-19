@@ -42,6 +42,14 @@ dotnet publish src\Unicaption.App\Unicaption.App.csproj -c $Configuration -r $Ru
     --self-contained true -o $publishDir
 if ($LASTEXITCODE -ne 0) { throw 'Publish failed' }
 
+# Google sign-in needs the Desktop OAuth client from unicaption.config.json, which is not in git.
+# Without it the installed app cannot sign in, so never package such a build.
+$clientConfig = Join-Path $publishDir 'unicaption.config.json'
+if (-not (Test-Path $clientConfig) -or
+    (Get-Content $clientConfig -Raw) -notmatch '"GoogleDesktopClientId"\s*:\s*"[^"]+"') {
+    throw 'unicaption.config.json with GoogleDesktopClientId is missing; Google sign-in would not work (see docs/SETUP.md)'
+}
+
 function Sign-File([string]$path) {
     if (-not $env:SIGN_CERT_THUMBPRINT) { return }
     $ts = if ($env:SIGN_TIMESTAMP_URL) { $env:SIGN_TIMESTAMP_URL } else { 'http://timestamp.digicert.com' }

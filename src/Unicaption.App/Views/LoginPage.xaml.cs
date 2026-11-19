@@ -51,6 +51,7 @@ public sealed partial class LoginPage : Page
         }
         catch (InvalidOperationException ex) when (ex.Message.Contains("not configured"))
         {
+            s.Diagnostics.Error("auth.not_configured", ex); // build shipped without unicaption.config.json
             ShowError("Google sign-in is not configured for this build.");
         }
         catch (Exception ex)

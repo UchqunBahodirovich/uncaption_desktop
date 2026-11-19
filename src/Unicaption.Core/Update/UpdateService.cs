@@ -35,9 +35,16 @@ public sealed partial class UpdateService
         _http = new HttpClient(handler ?? ApiClient.CreateHandler()) { Timeout = Timeout.InfiniteTimeSpan };
     }
 
+    /// <summary>
+    /// False when the last check could not read the manifest (offline, firewall, HTTP error), so a
+    /// manual check can tell "up to date" apart from "could not check".
+    /// </summary>
+    public bool LastCheckReachedServer { get; private set; }
+
     /// <summary>Returns a newer, valid update or null. Never throws for bad manifests (AC 34).</summary>
     public async Task<WindowsUpdate?> CheckAsync(CancellationToken ct)
     {
+        LastCheckReachedServer = false;
         try
         {
             using var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -49,6 +56,7 @@ public sealed partial class UpdateService
                 return null;
             }
             var text = await resp.Content.ReadAsStringAsync(cts.Token).ConfigureAwait(false);
+            LastCheckReachedServer = true;
             var update = ParseManifest(text, _currentVersion);
             _diag.Info("update.checked", ("available", (update?.Version ?? "none")));
             return update;

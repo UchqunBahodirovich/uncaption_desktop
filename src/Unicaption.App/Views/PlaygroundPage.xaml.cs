@@ -491,6 +491,11 @@ public sealed partial class PlaygroundPage : Page
             Close();
             _ = ShowSupportAsync();
         }));
+        body.Children.Add(MenuRow("", "Check for updates", "v" + _s.Config.AppVersion, danger: false, () =>
+        {
+            Close();
+            _ = CheckForUpdateAsync(manual: true);
+        }));
         body.Children.Add(MenuRow("", "Log out", null, danger: true, () =>
         {
             Close();
@@ -904,7 +909,8 @@ public sealed partial class PlaygroundPage : Page
 
     // ═══ Update (section 17) ═════════════════════════════════════════════════
 
-    private async Task CheckForUpdateAsync()
+    /// <param name="manual">From the account menu: also reports "up to date" and "could not check".</param>
+    private async Task CheckForUpdateAsync(bool manual = false)
     {
         WindowsUpdate? update;
         try
@@ -916,7 +922,19 @@ public sealed partial class PlaygroundPage : Page
             _s.Diagnostics.Warn("update.check_failed", ("type", ex.GetType().Name));
             return;
         }
-        if (update is null || _dialogOpen || _tour?.IsRunning == true) return;
+        if (_dialogOpen || _tour?.IsRunning == true) return;
+        if (update is null)
+        {
+            if (!manual) return;
+            var info = _s.Updates.LastCheckReachedServer
+                ? Ui.Dialog(this, "", "You're up to date", $"Unicaption {_s.Config.AppVersion} is the latest version.")
+                : Ui.Dialog(this, "", "Couldn't check for updates",
+                    "The update server could not be reached.",
+                    "Check your internet connection. On a work network a firewall may block unicaption.com.");
+            info.CloseButtonText = "OK";
+            await ShowDialogAsync(info);
+            return;
+        }
 
         var notes = update.Notes?.Trim() ?? "";
         if (_s.Session.IsBusy) notes = (notes.Length > 0 ? notes + "\n\n" : "") + "The current session will be stopped first.";

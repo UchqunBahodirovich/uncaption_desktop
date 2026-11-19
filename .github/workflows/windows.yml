@@ -19,6 +19,19 @@ jobs:
       - name: Install Inno Setup
         run: choco install innosetup -y --no-progress
 
+      # unicaption.config.json is not in git; the installer needs the Google Desktop OAuth client.
+      - name: Write client config
+        shell: pwsh
+        env:
+          GOOGLE_DESKTOP_CLIENT_ID: ${{ secrets.GOOGLE_DESKTOP_CLIENT_ID }}
+          GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.GOOGLE_DESKTOP_CLIENT_SECRET }}
+        run: |
+          if (-not $env:GOOGLE_DESKTOP_CLIENT_ID) { throw 'Add the GOOGLE_DESKTOP_CLIENT_ID repository secret' }
+          @{
+            GoogleDesktopClientId = $env:GOOGLE_DESKTOP_CLIENT_ID
+            GoogleDesktopClientSecret = $env:GOOGLE_DESKTOP_CLIENT_SECRET
+          } | ConvertTo-Json | Set-Content src/Unicaption.App/unicaption.config.json -Encoding utf8
+
       - name: Test, publish and package
         shell: pwsh
         run: ./installer/build_installer.ps1

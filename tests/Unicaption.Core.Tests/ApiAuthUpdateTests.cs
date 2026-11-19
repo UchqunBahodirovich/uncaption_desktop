@@ -244,6 +244,20 @@ public class UpdateServiceTests
         Assert.Equal(payload, await File.ReadAllBytesAsync(path));
         Directory.Delete(Path.GetDirectoryName(path)!, true);
     }
+
+    [Fact] // manual "Check for updates" tells "up to date" apart from "server unreachable"
+    public async Task Check_ReportsWhetherTheServerWasReached()
+    {
+        var upToDate = new UpdateService(new Uri("https://x/latest.json"), "0.2.0", NullDiagnostics.Instance,
+            new StubHandler(_ => StubHandler.Json("{\"version\":\"0.2.0\"}")));
+        Assert.Null(await upToDate.CheckAsync(CancellationToken.None));
+        Assert.True(upToDate.LastCheckReachedServer);
+
+        var blocked = new UpdateService(new Uri("https://x/latest.json"), "0.2.0", NullDiagnostics.Instance,
+            new StubHandler(_ => throw new HttpRequestException("untrusted certificate")));
+        Assert.Null(await blocked.CheckAsync(CancellationToken.None));
+        Assert.False(blocked.LastCheckReachedServer);
+    }
 }
 
 public class DiagnosticsTests
