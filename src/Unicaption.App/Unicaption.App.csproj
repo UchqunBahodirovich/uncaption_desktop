@@ -25,7 +25,7 @@
 
   <ItemGroup>
     <Content Include="Assets\**\*.*" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="unicaption.config.json" CopyToOutputDirectory="PreserveNewest" Condition="Exists('unicaption.config.json')" />
+    <None Include="unicaption.config.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" Condition="Exists('unicaption.config.json')" />
   </ItemGroup>
 
   <ItemGroup>

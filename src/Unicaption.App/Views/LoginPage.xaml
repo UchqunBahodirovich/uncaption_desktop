@@ -27,14 +27,44 @@
                     <TextBlock Text="Real-time transcription &amp; translation" Style="{StaticResource UcText}"
                                Foreground="{ThemeResource UcTextMuted}" HorizontalAlignment="Center" Margin="0,8,0,0" />
 
+                    <!-- Email + password (Firebase), same flows as the web app -->
+                    <StackPanel x:Name="EmailForm" Margin="0,24,0,0" Spacing="10">
+                        <TextBox x:Name="NameBox" Style="{StaticResource UcTextBox}" PlaceholderText="Full name"
+                                 Visibility="Collapsed" KeyDown="OnFieldKeyDown" AutomationProperties.Name="Full name" />
+                        <TextBox x:Name="EmailBox" Style="{StaticResource UcTextBox}" PlaceholderText="Email"
+                                 InputScope="EmailSmtpAddress" KeyDown="OnFieldKeyDown" AutomationProperties.Name="Email" />
+                        <PasswordBox x:Name="PasswordInput" PlaceholderText="Password" FontSize="14" CornerRadius="10"
+                                     Padding="14,10" KeyDown="OnFieldKeyDown" AutomationProperties.Name="Password" />
+                        <HyperlinkButton x:Name="ForgotLink" Content="Forgot password?" Style="{StaticResource UcLinkButton}"
+                                         HorizontalAlignment="Right" Click="OnForgot" />
+                        <Button x:Name="EmailButton" Style="{StaticResource UcPrimaryButton}" HorizontalAlignment="Stretch"
+                                Click="OnEmailSubmit">
+                            <TextBlock x:Name="EmailLabel" Text="Sign in" />
+                        </Button>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" Spacing="4">
+                            <TextBlock x:Name="ModePrompt" Text="New to Unicaption?" Style="{StaticResource UcMutedText}"
+                                       VerticalAlignment="Center" />
+                            <HyperlinkButton x:Name="ModeLink" Content="Create account" Style="{StaticResource UcLinkButton}"
+                                             FontWeight="SemiBold" Click="OnToggleMode" />
+                        </StackPanel>
+                    </StackPanel>
 
-                    <!-- Google sign-in button per Google's branding guidelines: neutral surface,
-                         the standard multicolour "G" mark, 44 high. -->
-                    <Button x:Name="GoogleButton" Style="{StaticResource UcSecondaryButton}" Margin="0,32,0,0"
-                            HorizontalAlignment="Stretch" MinHeight="44" FontSize="14"
-                            Foreground="{ThemeResource UcTextPrimary}" Click="OnSignIn"
+                    <!-- Google is shown only when this build has a Desktop OAuth client -->
+                    <Grid x:Name="OrDivider" Margin="0,18,0,0" ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+                        <Border Height="1" Background="{ThemeResource UcBorderSubtle}" VerticalAlignment="Center" />
+                        <TextBlock Grid.Column="1" Text="or" Style="{StaticResource UcMutedText}" VerticalAlignment="Center" />
+                        <Border Grid.Column="2" Height="1" Background="{ThemeResource UcBorderSubtle}" VerticalAlignment="Center" />
+                    </Grid>
+                    <!-- Google button per Google's branding guidelines: neutral surface, multicolour G mark -->
+                    <Button x:Name="GoogleButton" Style="{StaticResource UcSecondaryButton}" Margin="0,18,0,0"
+                            HorizontalAlignment="Stretch" Foreground="{ThemeResource UcTextPrimary}" Click="OnSignIn"
                             AutomationProperties.Name="Continue with Google">
-                        <StackPanel Orientation="Horizontal" Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="10">
                             <Viewbox Width="18" Height="18" AutomationProperties.AccessibilityView="Raw">
                                 <Canvas Width="48" Height="48">
                                     <Path Fill="#EA4335" Data="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
@@ -49,8 +79,12 @@
                     <HyperlinkButton x:Name="CancelLink" Content="Cancel" Visibility="Collapsed"
                                      HorizontalAlignment="Center" Margin="0,6,0,0" Click="OnCancel" />
 
+                    <TextBlock x:Name="InfoText" Visibility="Collapsed" Style="{StaticResource UcText}" FontSize="12"
+                               Foreground="{ThemeResource UcSuccess}" TextAlignment="Center" Margin="0,12,0,0"
+                               AutomationProperties.LiveSetting="Polite" />
                     <TextBlock x:Name="ErrorText" Visibility="Collapsed" Style="{StaticResource UcText}" FontSize="12"
-                               Foreground="{ThemeResource UcError}" TextAlignment="Center" Margin="0,12,0,0" />
+                               Foreground="{ThemeResource UcError}" TextAlignment="Center" Margin="0,12,0,0"
+                               AutomationProperties.LiveSetting="Assertive" />
 
                     <StackPanel x:Name="LegalPanel" Margin="0,24,0,0" HorizontalAlignment="Center">
                         <TextBlock Style="{StaticResource UcMutedText}" TextAlignment="Center"

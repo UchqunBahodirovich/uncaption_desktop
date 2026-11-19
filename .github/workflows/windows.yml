@@ -19,18 +19,20 @@ jobs:
       - name: Install Inno Setup
         run: choco install innosetup -y --no-progress
 
-      # unicaption.config.json is not in git; the installer needs the Google Desktop OAuth client.
-      - name: Write client config
+      # unicaption.config.json is not in git. Google sign-in must ship with every release, so the
+      # build fails without the Desktop OAuth client (repository variable or secret):
+      #   gh variable set GOOGLE_DESKTOP_CLIENT_ID --body "<id>.apps.googleusercontent.com"
+      #   gh secret set GOOGLE_DESKTOP_CLIENT_SECRET
+      - name: Write app config
         shell: pwsh
         env:
-          GOOGLE_DESKTOP_CLIENT_ID: ${{ secrets.GOOGLE_DESKTOP_CLIENT_ID }}
+          GOOGLE_DESKTOP_CLIENT_ID: ${{ vars.GOOGLE_DESKTOP_CLIENT_ID || secrets.GOOGLE_DESKTOP_CLIENT_ID }}
           GOOGLE_DESKTOP_CLIENT_SECRET: ${{ secrets.GOOGLE_DESKTOP_CLIENT_SECRET }}
         run: |
-          if (-not $env:GOOGLE_DESKTOP_CLIENT_ID) { throw 'Add the GOOGLE_DESKTOP_CLIENT_ID repository secret' }
-          @{
-            GoogleDesktopClientId = $env:GOOGLE_DESKTOP_CLIENT_ID
-            GoogleDesktopClientSecret = $env:GOOGLE_DESKTOP_CLIENT_SECRET
-          } | ConvertTo-Json | Set-Content src/Unicaption.App/unicaption.config.json -Encoding utf8
+          if (-not $env:GOOGLE_DESKTOP_CLIENT_ID) { throw 'Set GOOGLE_DESKTOP_CLIENT_ID (repository variable or secret)' }
+          $cfg = [ordered]@{ GoogleDesktopClientId = $env:GOOGLE_DESKTOP_CLIENT_ID }
+          if ($env:GOOGLE_DESKTOP_CLIENT_SECRET) { $cfg.GoogleDesktopClientSecret = $env:GOOGLE_DESKTOP_CLIENT_SECRET }
+          $cfg | ConvertTo-Json | Set-Content src/Unicaption.App/unicaption.config.json -Encoding utf8
 
       - name: Test, publish and package
         shell: pwsh
